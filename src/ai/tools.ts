@@ -7,10 +7,13 @@
  * - getWeather: Fetches the weather for a given city (placeholder).
  * - findLocalEvents: Finds local events near a location (placeholder).
  * - googleSearch: Performs a Google search and returns results (placeholder).
+ * - getPropertyDatabaseReport: Retrieves and summarizes booking and expense data.
  */
 
 import { ai } from '@/ai/genkit';
 import { z } from 'genkit';
+import { getBookings } from '@/services/bookings';
+import { getExpenses } from '@/services/expenses';
 
 // 1. Translation Tool (Fully Functional)
 export const translateText = ai.defineTool(
@@ -110,7 +113,7 @@ export const googleSearch = ai.defineTool(
 
     if (!apiKey || !searchEngineId) {
       console.error("Google Search API Key or Search Engine ID is not configured.");
-      return "Search is not configured. Please provide the necessary API keys.";
+      return "Search is not configured. Please provide the necessary API keys in the .env file.";
     }
 
     const url = `https://www.googleapis.com/customsearch/v1?key=${apiKey}&cx=${searchEngineId}&q=${encodeURIComponent(input.query)}`;
@@ -138,6 +141,55 @@ export const googleSearch = ai.defineTool(
     } catch (error) {
       console.error("Failed to execute Google Search:", error);
       return "Sorry, I was unable to perform the search at this time.";
+    }
+  }
+);
+
+
+// 5. Property Database Report Tool (Functional)
+export const getPropertyDatabaseReport = ai.defineTool(
+  {
+    name: 'getPropertyDatabaseReport',
+    description: 'Retrieves a summary of financial and booking activity from the property database for a given date range.',
+    inputSchema: z.object({
+        startDate: z.string().describe("The start date of the report period in YYYY-MM-DD format."),
+        endDate: z.string().describe("The end date of the report period in YYYY-MM-DD format."),
+    }),
+    outputSchema: z.string().describe('A summary of the report including total revenue, expenses, net profit, and booking count.'),
+  },
+  async (input) => {
+    console.log(`Generating database report from ${input.startDate} to ${input.endDate}`);
+    
+    try {
+        const allBookings = await getBookings();
+        const allExpenses = await getExpenses();
+
+        const start = new Date(input.startDate);
+        const end = new Date(input.endDate);
+
+        const relevantBookings = allBookings.filter(b => {
+            const bookingDate = new Date(b.checkinDate);
+            return bookingDate >= start && bookingDate <= end;
+        });
+
+        const relevantExpenses = allExpenses.filter(e => {
+            const expenseDate = new Date(e.date);
+            return expenseDate >= start && expenseDate <= end;
+        });
+        
+        const totalRevenue = relevantBookings.reduce((acc, booking) => acc + booking.totalAmount, 0);
+        const totalExpenses = relevantExpenses.reduce((acc, expense) => acc + expense.amount, 0);
+        const netProfit = totalRevenue - totalExpenses;
+
+        return `Report from ${input.startDate} to ${input.endDate}:
+- Total Revenue: ₱${totalRevenue.toLocaleString()}
+- Total Expenses: ₱${totalExpenses.toLocaleString()}
+- Net Profit: ₱${netProfit.toLocaleString()}
+- Number of Bookings: ${relevantBookings.length}`;
+
+    } catch (error) {
+        console.error("Failed to generate database report:", error);
+        return "Sorry, I was unable to access the database to generate the report.";
     }
   }
 );

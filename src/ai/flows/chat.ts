@@ -10,7 +10,7 @@
 
 import { ai } from '@/ai/genkit';
 import { z } from 'genkit';
-import { translateText, getWeather, findLocalEvents, googleSearch } from '@/ai/tools';
+import { translateText, getWeather, findLocalEvents, googleSearch, getPropertyDatabaseReport } from '@/ai/tools';
 
 export async function chat(
   input: z.infer<typeof ChatInputSchema>
@@ -34,10 +34,11 @@ export async function chat(
       name: 'chatPrompt',
       input: { schema: ChatInputSchema },
       output: { schema: ChatOutputSchema },
-      tools: [translateText, getWeather, findLocalEvents, googleSearch],
+      tools: [translateText, getWeather, findLocalEvents, googleSearch, getPropertyDatabaseReport],
       system: `You are a helpful AI assistant integrated into a property management application. You can answer questions and perform tasks based on the tools you have access to.
 
 Your Tools:
+- getPropertyDatabaseReport: Use this if the user asks for financial data, performance reports, revenue, expenses, or booking counts for a specific time period. You will need to provide a start and end date.
 - googleSearch: Use this for general knowledge questions or topics about current events.
 - translateText: Use this if the user asks for a translation into another language.
 - getWeather: Use this if the user asks about the weather for a specific city.
@@ -47,7 +48,7 @@ Instructions:
 - First, decide if a tool is necessary to answer the user's question.
 - If a tool is needed, use it.
 - If no specific tool is needed, or if the user is having a general conversation, answer directly.
-- You do not have access to information from the app's database (like bookings or expenses).`,
+- Infer dates from user queries. If they say "last month," calculate the date range for the previous calendar month. Today's date is ${new Date().toDateString()}.`,
       prompt: `{{#each history}}
     {{role}}: {{content}}
     {{/each}}
