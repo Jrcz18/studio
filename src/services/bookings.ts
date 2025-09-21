@@ -6,11 +6,14 @@ import { collection, getDocs, addDoc, deleteDoc, doc, updateDoc } from 'firebase
 import type { Booking } from '@/lib/types';
 import { addNotification } from './notifications';
 import { auth } from '@/lib/firebase';
+import { getFirebaseAdmin } from '@/lib/firebase-admin';
 
-const bookingsCollection = collection(db, 'bookings');
 
+const bookingsCollectionRef = collection(db, 'bookings');
+
+// CLIENT-SIDE functions
 export async function getBookings(): Promise<Booking[]> {
-    const snapshot = await getDocs(bookingsCollection);
+    const snapshot = await getDocs(bookingsCollectionRef);
     return snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Booking));
 }
 
@@ -62,4 +65,13 @@ export async function updateBooking(bookingData: Booking): Promise<void> {
 export async function deleteBooking(bookingId: string): Promise<void> {
     const bookingDoc = doc(db, 'bookings', bookingId);
     await deleteDoc(bookingDoc);
+}
+
+
+// SERVER-SIDE functions
+export async function getBookingsOnServer(): Promise<Booking[]> {
+    const { adminDb } = await getFirebaseAdmin();
+    const bookingsCollection = adminDb.collection('bookings');
+    const snapshot = await bookingsCollection.get();
+    return snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Booking));
 }

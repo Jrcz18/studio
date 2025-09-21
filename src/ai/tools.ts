@@ -12,8 +12,8 @@
 
 import { ai } from '@/ai/genkit';
 import { z } from 'genkit';
-import { getBookings } from '@/services/bookings';
-import { getExpenses } from '@/services/expenses';
+import { getBookingsOnServer } from '@/services/bookings';
+import { getExpensesOnServer } from '@/services/expenses';
 
 // 1. Translation Tool (Fully Functional)
 export const translateText = ai.defineTool(
@@ -161,8 +161,8 @@ export const getPropertyDatabaseReport = ai.defineTool(
     console.log(`Generating database report from ${input.startDate} to ${input.endDate}`);
     
     try {
-        const allBookings = await getBookings();
-        const allExpenses = await getExpenses();
+        const allBookings = await getBookingsOnServer();
+        const allExpenses = await getExpensesOnServer();
 
         const start = new Date(input.startDate);
         const end = new Date(input.endDate);
