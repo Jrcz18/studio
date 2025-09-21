@@ -2,10 +2,20 @@
 'use client';
 
 import { db } from '@/lib/firebase';
-import { collection, getDocs, addDoc, doc, updateDoc, query, where, orderBy, limit } from 'firebase/firestore';
+import { collection, getDocs, addDoc, doc, updateDoc, query, where, getDoc } from 'firebase/firestore';
 import type { AppNotification } from '@/lib/types';
 
 const notificationsCollection = collection(db, 'notifications');
+
+// Get a single notification by its ID
+export async function getNotification(notificationId: string): Promise<AppNotification | null> {
+    const docRef = doc(db, 'notifications', notificationId);
+    const docSnap = await getDoc(docRef);
+    if (docSnap.exists()) {
+        return { id: docSnap.id, ...docSnap.data() } as AppNotification;
+    }
+    return null;
+}
 
 // Get all notifications for a user, sorted by most recent
 export async function getAllNotifications(userId: string): Promise<AppNotification[]> {
@@ -24,8 +34,13 @@ export async function getUnreadNotifications(userId: string): Promise<AppNotific
 
 
 // Add a new notification
-export async function addNotification(notificationData: Omit<AppNotification, 'id'>): Promise<string> {
-    const docRef = await addDoc(notificationsCollection, notificationData);
+export async function addNotification(notificationData: Omit<AppNotification, 'id' | 'link'>): Promise<string> {
+    const docRef = await addDoc(notificationsCollection, {
+        ...notificationData,
+        link: `/dashboard/notifications/${(await docRef).id}`
+    });
+    // Now update the document with its own ID in the link
+    await updateDoc(docRef, { link: `/dashboard/notifications/${docRef.id}`});
     return docRef.id;
 }
 
@@ -38,11 +53,6 @@ export async function markNotificationAsRead(notificationId: string): Promise<vo
 
 // Mark all unread notifications as read for a user
 export async function markAllNotificationsAsRead(userId: string): Promise<void> {
-    const q = query(notificationsCollection, where('userId', '==', userId), where('isRead', '==', false));
-    const snapshot = await getDocs(q);
-    
-    // This query requires a composite index: userId (asc), isRead (asc)
-    // If that index is deleted, this will fail. A more robust way without the index:
     const allNotifications = await getAllNotifications(userId);
     const unreadNotifications = allNotifications.filter(n => !n.isRead);
 
@@ -51,4 +61,3 @@ export async function markAllNotificationsAsRead(userId: string): Promise<void> 
     );
     await Promise.all(promises);
 }
-

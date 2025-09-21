@@ -45,7 +45,6 @@ export async function addBooking(bookingData: Omit<Booking, 'id'>): Promise<stri
             description: `Booking for ${bookingData.guestFirstName} ${bookingData.guestLastName} was successfully created.`,
             isRead: false,
             createdAt: new Date().toISOString(),
-            link: `/dashboard/bookings`,
             data: { bookingId }
         });
     }

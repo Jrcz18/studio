@@ -11,7 +11,7 @@ import { formatDate } from '@/lib/utils';
 import { useRouter } from 'next/navigation';
 import { cn } from '@/lib/utils';
 
-const iconMap = {
+const iconMap: Record<AppNotification['type'], React.ReactNode> = {
     booking: <Calendar className="w-5 h-5 text-blue-500" />,
     expense: <DollarSign className="w-5 h-5 text-red-500" />,
     reminder: <Bell className="w-5 h-5 text-yellow-500" />,
@@ -38,16 +38,20 @@ export default function NotificationsPage() {
 
     useEffect(() => {
         fetchNotifications();
-    }, [fetchNotifications]);
+    }, [user]); // Removed fetchNotifications from dependency array
 
     const handleNotificationClick = async (notification: AppNotification) => {
+        // Optimistically update the UI
         if (!notification.isRead) {
-            await markNotificationAsRead(notification.id!);
-            // Optimistically update the UI
             setNotifications(prev => prev.map(n => n.id === notification.id ? { ...n, isRead: true } : n));
         }
+
+        // Navigate and then mark as read in the background
         if (notification.link) {
             router.push(notification.link);
+        }
+        if (!notification.isRead) {
+            await markNotificationAsRead(notification.id!);
         }
     };
     
@@ -82,7 +86,7 @@ export default function NotificationsPage() {
                             key={notification.id}
                             onClick={() => handleNotificationClick(notification)}
                             className={cn(
-                                "fb-card p-4 flex items-start space-x-4 cursor-pointer transition-colors",
+                                "prime-card p-4 flex items-start space-x-4 cursor-pointer transition-colors",
                                 notification.isRead ? 'bg-white' : 'bg-yellow-50 border-yellow-200'
                             )}
                         >
@@ -94,7 +98,7 @@ export default function NotificationsPage() {
                             </div>
                             <div className="flex-1">
                                 <p className="font-semibold text-gray-800">{notification.title}</p>
-                                <p className="text-sm text-gray-600">{notification.description}</p>
+                                <p className="text-sm text-gray-600 line-clamp-2">{notification.description}</p>
                                 <p className="text-xs text-gray-400 mt-1">{formatDate(notification.createdAt)}</p>
                             </div>
                             {!notification.isRead && (
