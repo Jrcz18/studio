@@ -25,18 +25,21 @@ export default function NotificationsPage() {
     const [notifications, setNotifications] = useState<AppNotification[]>([]);
     const [loading, setLoading] = useState(true);
 
-    const fetchNotifications = useCallback(async () => {
-        if (user) {
-            setLoading(true);
-            const data = await getAllNotifications(user.uid);
-            setNotifications(data);
-            setLoading(false);
-        }
-    }, [user]);
-
     useEffect(() => {
+        const fetchNotifications = async () => {
+            if (user) {
+                setLoading(true);
+                const data = await getAllNotifications(user.uid);
+                setNotifications(data);
+                setLoading(false);
+            } else {
+                // If there's no user, we are not loading.
+                setLoading(false);
+            }
+        };
+
         fetchNotifications();
-    }, [fetchNotifications]);
+    }, [user]);
 
     const handleNotificationClick = async (notification: AppNotification) => {
         if (!notification.isRead) {
@@ -111,4 +114,3 @@ export default function NotificationsPage() {
         </div>
     );
 }
-
