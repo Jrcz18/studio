@@ -152,7 +152,19 @@ export default function ReportsPage() {
         
         let totalCommission = 0;
         if (agent.commissionType === 'fixed_markup') {
-            totalCommission = agentBookings.length * agent.commissionMarkup;
+            totalCommission = agentBookings.reduce((sum, booking) => {
+                const unit = units.find(u => u.id === booking.unitId);
+                if (unit) {
+                    const surplus = booking.nightlyRate - unit.rate;
+                    const checkin = new Date(booking.checkinDate);
+                    const checkout = new Date(booking.checkoutDate);
+                    const nights = Math.ceil((checkout.getTime() - checkin.getTime()) / (1000 * 3600 * 24));
+                    if (surplus > 0 && nights > 0) {
+                        return sum + (surplus * nights);
+                    }
+                }
+                return sum;
+            }, 0);
         } else { // Default to percentage
             totalCommission = (totalRevenueGenerated * agent.commissionRate) / 100;
         }
@@ -215,9 +227,9 @@ export default function ReportsPage() {
       
       <Tabs defaultValue="unit" className="w-full">
         <TabsList className="grid w-full grid-cols-3 bg-gray-200 rounded-lg p-1">
-          <TabsTrigger value="unit" className="data-[state=active]:bg-yellow-400 data-[state=active]:text-black data-[state=active]:shadow-md rounded-md">Unit Report</TabsTrigger>
-          <TabsTrigger value="agent" className="data-[state=active]:bg-yellow-400 data-[state=active]:text-black data-[state=active]:shadow-md rounded-md">Agent Report</TabsTrigger>
-          <TabsTrigger value="investor" className="data-[state=active]:bg-yellow-400 data-[state=active]:text-black data-[state=active]:shadow-md rounded-md">Investor Report</TabsTrigger>
+          <TabsTrigger value="unit" className="data-[state=active]:prime-button rounded-md">Unit Report</TabsTrigger>
+          <TabsTrigger value="agent" className="data-[state=active]:prime-button rounded-md">Agent Report</TabsTrigger>
+          <TabsTrigger value="investor" className="data-[state=active]:prime-button rounded-md">Investor Report</TabsTrigger>
         </TabsList>
         <TabsContent value="unit">
             <div className="prime-card p-4 my-4">
