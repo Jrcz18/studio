@@ -14,13 +14,7 @@ import {
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from '@/components/ui/select';
+import { Checkbox } from '@/components/ui/checkbox';
 
 export function AddInvestorDialog({
   children,
@@ -45,7 +39,7 @@ export function AddInvestorDialog({
   const [investmentAmount, setInvestmentAmount] = useState(0);
   const [sharePercentage, setSharePercentage] = useState(0);
   const [joinDate, setJoinDate] = useState('');
-  const [unitId, setUnitId] = useState<string | undefined>(undefined);
+  const [selectedUnitIds, setSelectedUnitIds] = useState<string[]>([]);
 
   useEffect(() => {
     if (open) {
@@ -56,7 +50,7 @@ export function AddInvestorDialog({
         setInvestmentAmount(investor.investmentAmount);
         setSharePercentage(investor.sharePercentage);
         setJoinDate(investor.joinDate);
-        setUnitId(investor.unitId);
+        setSelectedUnitIds(investor.unitIds || []);
       } else {
         // Reset form for new investor
         setName('');
@@ -65,10 +59,18 @@ export function AddInvestorDialog({
         setInvestmentAmount(0);
         setSharePercentage(0);
         setJoinDate(new Date().toISOString().split('T')[0]);
-        setUnitId(undefined);
+        setSelectedUnitIds([]);
       }
     }
   }, [open, investor]);
+
+  const handleUnitSelection = (unitId: string, checked: boolean) => {
+    if (checked) {
+      setSelectedUnitIds((prev) => [...prev, unitId]);
+    } else {
+      setSelectedUnitIds((prev) => prev.filter((id) => id !== unitId));
+    }
+  };
 
   const handleSubmit = (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
@@ -80,7 +82,7 @@ export function AddInvestorDialog({
       investmentAmount,
       sharePercentage,
       joinDate,
-      unitId: unitId || undefined,
+      unitIds: selectedUnitIds,
     };
 
     if (investor) {
@@ -142,22 +144,22 @@ export function AddInvestorDialog({
               required
             />
           </div>
-          <div className="grid grid-cols-4 items-center gap-4">
-            <Label htmlFor="investorUnit" className="text-right">
-              Unit
-            </Label>
-            <Select value={unitId} onValueChange={(value) => setUnitId(value === '' ? undefined : value)}>
-              <SelectTrigger className="col-span-3">
-                <SelectValue placeholder="Select Unit" />
-              </SelectTrigger>
-              <SelectContent>
-                {units.map((unit) => (
-                  <SelectItem key={unit.id} value={unit.id!}>
-                    {unit.name}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
+          <div className="grid grid-cols-4 items-start gap-4">
+            <Label className="text-right pt-2">Units</Label>
+            <div className="col-span-3 space-y-2">
+              {units.map((unit) => (
+                <div key={unit.id} className="flex items-center space-x-2">
+                  <Checkbox
+                    id={`unit-${unit.id}`}
+                    checked={selectedUnitIds.includes(unit.id!)}
+                    onCheckedChange={(checked) =>
+                      handleUnitSelection(unit.id!, !!checked)
+                    }
+                  />
+                  <Label htmlFor={`unit-${unit.id}`}>{unit.name}</Label>
+                </div>
+              ))}
+            </div>
           </div>
           <div className="grid grid-cols-4 items-center gap-4">
             <Label htmlFor="investorAmount" className="text-right">

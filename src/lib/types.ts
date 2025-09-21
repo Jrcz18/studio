@@ -59,7 +59,7 @@ export type Investor = {
     sharePercentage: number;
     joinDate: string;
     status: 'active' | 'inactive';
-    unitId?: string;
+    unitIds: string[];
 };
 
 export type Agent = {

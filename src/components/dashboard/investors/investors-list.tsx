@@ -69,11 +69,14 @@ export function InvestorsList({
   return (
     <div className="space-y-4">
       {investors.map((investor) => {
-        const unit = investor.unitId ? units.find(u => u.id === investor.unitId) : null;
-        const unitPerformance = unit ? getUnitPerformance[unit.id!] : { net: 0 };
+        const investorUnits = units.filter(u => investor.unitIds?.includes(u.id!));
         
         const currentMonth = new Date().toISOString().slice(0, 7); // YYYY-MM
-        const monthlyProfit = unitPerformance?.net ?? 0;
+        const monthlyProfit = investorUnits.reduce((total, unit) => {
+            const performance = getUnitPerformance[unit.id!];
+            return total + (performance?.net ?? 0);
+        }, 0);
+        
         const investorShare = (monthlyProfit * investor.sharePercentage) / 100;
         
         const currentPayment = profitPayments.find(
@@ -118,8 +121,8 @@ export function InvestorsList({
                   <p>
                     <strong>Share:</strong> {investor.sharePercentage}%
                   </p>
-                  <p>
-                    <strong>Unit:</strong> {unit?.name ?? 'N/A'}
+                   <p>
+                    <strong>Units:</strong> {investorUnits.length > 0 ? investorUnits.map(u => u.name).join(', ') : 'N/A'}
                   </p>
                 </div>
                 <div>

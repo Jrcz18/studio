@@ -78,7 +78,7 @@ export default function ReportsPage() {
         const netProfit = totalRevenue - totalExpenses;
 
         const unit = units.find(u => u.id === selectedUnitId);
-        const investor = unit ? investors.find(i => i.unitId === unit.id) : null;
+        const investor = unit ? investors.find(i => i.unitIds.includes(unit.id!)) : null;
         
         let investorShare = 0;
         if (investor && netProfit > 0) {
