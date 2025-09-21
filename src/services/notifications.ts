@@ -16,8 +16,14 @@ export async function getAllNotifications(userId: string): Promise<AppNotificati
 
 // Get only unread notifications for a user
 export async function getUnreadNotifications(userId: string): Promise<AppNotification[]> {
-    const allNotifications = await getAllNotifications(userId);
-    return allNotifications.filter(n => !n.isRead);
+    const q = query(
+        notificationsCollection,
+        where('userId', '==', userId),
+        where('isRead', '==', false),
+        orderBy('createdAt', 'desc')
+    );
+    const snapshot = await getDocs(q);
+    return snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as AppNotification));
 }
 
 
@@ -39,21 +45,8 @@ export async function markAllNotificationsAsRead(userId: string): Promise<void> 
     const q = query(notificationsCollection, where('userId', '==', userId), where('isRead', '==', false));
     const snapshot = await getDocs(q);
     
-    // This query might require an index, but it's simpler. 
-    // If it still fails, we can fetch all and filter client-side.
-    try {
-        const promises = snapshot.docs.map(document => 
-            updateDoc(doc(db, 'notifications', document.id), { isRead: true })
-        );
-        await Promise.all(promises);
-    } catch (e) {
-        // Fallback for when index is not available.
-        console.warn("Falling back to client-side filtering for marking notifications as read.");
-        const allDocs = await getAllNotifications(userId);
-        const unreadDocs = allDocs.filter(doc => !doc.isRead);
-        const promises = unreadDocs.map(document =>
-            updateDoc(doc(db, 'notifications', document.id!), { isRead: true })
-        );
-        await Promise.all(promises);
-    }
+    const promises = snapshot.docs.map(document => 
+        updateDoc(doc(db, 'notifications', document.id), { isRead: true })
+    );
+    await Promise.all(promises);
 }
