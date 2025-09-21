@@ -26,6 +26,8 @@ interface UIContextType {
   setIsAddReminderOpen: (open: boolean) => void;
   isQuickActionsOpen: boolean;
   setIsQuickActionsOpen: (open: boolean) => void;
+  isAiChatOpen: boolean;
+  setIsAiChatOpen: (open: boolean) => void;
 }
 
 const UIContext = createContext<UIContextType | undefined>(undefined);
@@ -42,6 +44,7 @@ export function UIProvider({ children }: { children: ReactNode }) {
   const [isPayProfitOpen, setIsPayProfitOpen] = useState(false);
   const [isAddReminderOpen, setIsAddReminderOpen] = useState(false);
   const [isQuickActionsOpen, setIsQuickActionsOpen] = useState(false);
+  const [isAiChatOpen, setIsAiChatOpen] = useState(false);
 
   const value = {
     isAddUnitOpen,
@@ -66,6 +69,8 @@ export function UIProvider({ children }: { children: ReactNode }) {
     setIsAddReminderOpen,
     isQuickActionsOpen,
     setIsQuickActionsOpen,
+    isAiChatOpen,
+    setIsAiChatOpen,
   };
 
   return <UIContext.Provider value={value}>{children}</UIContext.Provider>;

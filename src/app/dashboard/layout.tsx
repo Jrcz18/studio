@@ -8,6 +8,7 @@ import { useAuth } from '@/hooks/use-auth.tsx';
 import React, { useEffect } from 'react';
 import { QuickActions } from '@/components/dashboard/quick-actions';
 import { UIProvider, useUIContext } from '@/hooks/use-ui-context';
+import { AIChatDialog } from '@/components/dashboard/ai-chat-dialog';
 
 const HomeIcon = () => (
   <svg
@@ -101,6 +102,8 @@ function Layout({ children }: { children: React.ReactNode }) {
     isAddReminderOpen,
     isQuickActionsOpen,
     setIsQuickActionsOpen,
+    isAiChatOpen,
+    setIsAiChatOpen,
   } = useUIContext();
 
   const isAnyDialogOpen =
@@ -114,7 +117,8 @@ function Layout({ children }: { children: React.ReactNode }) {
     isAddInvestorOpen ||
     isPayProfitOpen ||
     isAddReminderOpen ||
-    isQuickActionsOpen;
+    isQuickActionsOpen ||
+    isAiChatOpen;
 
   useEffect(() => {
     if (!loading && !user) {
@@ -162,6 +166,7 @@ function Layout({ children }: { children: React.ReactNode }) {
         open={isQuickActionsOpen}
         onOpenChange={setIsQuickActionsOpen}
       />
+      <AIChatDialog open={isAiChatOpen} onOpenChange={setIsAiChatOpen} />
     </div>
   );
 }
