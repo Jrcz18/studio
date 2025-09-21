@@ -61,6 +61,9 @@ export function AgentReportView({ report }: { report: any }) {
   }
 
   if (!report) return null;
+  
+  const isProfitShare = report.agent.commissionType === 'percentage';
+
 
   return (
     <div className="prime-card p-4">
@@ -93,10 +96,23 @@ export function AgentReportView({ report }: { report: any }) {
                     <p className="text-sm text-gray-600">Revenue Generated</p>
                 </div>
                 <div>
-                    <p className="text-2xl font-bold text-yellow-600">₱{report.totalCommission.toLocaleString()}</p>
-                    <p className="text-sm text-gray-600">Total Commission</p>
+                    <p className="text-2xl font-bold text-yellow-600">₱{report.totalCommission.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</p>
+                    <p className="text-sm text-gray-600">Agent Commission</p>
                 </div>
             </div>
+
+            {isProfitShare && report.unitPerformance && (
+                <div className="mb-6 p-4 rounded-lg bg-gray-50 border">
+                    <h3 className="text-md font-semibold text-gray-800 mb-2">Profit-Sharing Breakdown</h3>
+                    <p className="text-xs text-gray-500 mb-2">Based on units booked by agent this month: <span className="font-medium">{report.unitPerformance.unitNames}</span></p>
+                    <div className="grid grid-cols-2 md:grid-cols-4 gap-2 text-sm">
+                        <div><span className="font-semibold">Unit Revenue:</span> ₱{report.unitPerformance.totalRevenue.toLocaleString()}</div>
+                        <div><span className="font-semibold">Unit Expenses:</span> ₱{report.unitPerformance.totalExpenses.toLocaleString()}</div>
+                        <div><span className="font-semibold">Unit Profit:</span> ₱{report.unitPerformance.netProfit.toLocaleString()}</div>
+                        <div><span className="font-semibold">Agent Contribution:</span> {report.agentContributionPercentage.toFixed(2)}%</div>
+                    </div>
+                </div>
+            )}
 
             <div className="mb-6">
                 <h3 className="text-lg font-semibold text-gray-800 mb-2 border-b pb-1">Bookings Details</h3>

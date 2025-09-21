@@ -21,7 +21,7 @@ const months = [
     { value: 0, label: 'January' }, { value: 1, label: 'February' }, { value: 2, label: 'March' },
     { value: 3, label: 'April' }, { value: 4, label: 'May' }, { value: 5, label: 'June' },
     { value: 6, label: 'July' }, { value: 7, label: 'August' }, { value: 8, label: 'September' },
-    { value: 9, label: 'October' }, { value: 10, label: 'November' }, { value: 11, label: 'December' }
+    { value: 9, 'label': 'October' }, { value: 10, 'label': 'November' }, { value: 11, 'label': 'December' }
 ];
 
 export default function ReportsPage() {
@@ -148,9 +148,10 @@ export default function ReportsPage() {
                    bookingDate.getMonth() === month;
         });
 
-        const totalRevenueGenerated = agentBookings.reduce((sum, b) => sum + b.totalAmount, 0);
-        
+        const agentRevenue = agentBookings.reduce((sum, b) => sum + b.totalAmount, 0);
         let totalCommission = 0;
+        let reportData: any = {};
+
         if (agent.commissionType === 'fixed_markup') {
             totalCommission = agentBookings.reduce((sum, booking) => {
                 const unit = units.find(u => u.id === booking.unitId);
@@ -165,18 +166,44 @@ export default function ReportsPage() {
                 }
                 return sum;
             }, 0);
-        } else { // Default to percentage
-            totalCommission = (totalRevenueGenerated * agent.commissionRate) / 100;
-        }
 
+            reportData = {
+                totalRevenueGenerated: agentRevenue,
+                totalCommission,
+            };
+
+        } else { // 'percentage' profit-sharing logic
+            const relevantUnitIds = [...new Set(agentBookings.map(b => b.unitId))];
+            
+            if (relevantUnitIds.length > 0) {
+                const performance = getMonthlyPerformance(relevantUnitIds, year, month);
+                const agentContributionPercentage = performance.totalRevenue > 0 ? (agentRevenue / performance.totalRevenue) : 0;
+                const agentProfitShare = agentContributionPercentage * performance.netProfit;
+                totalCommission = agentProfitShare * (agent.commissionRate / 100);
+
+                reportData = {
+                    totalRevenueGenerated: agentRevenue,
+                    totalCommission,
+                    unitPerformance: {
+                        ...performance,
+                        unitNames: units.filter(u => relevantUnitIds.includes(u.id!)).map(u => u.name).join(', '),
+                    },
+                    agentContributionPercentage: agentContributionPercentage * 100,
+                };
+            } else {
+                 reportData = {
+                    totalRevenueGenerated: 0,
+                    totalCommission: 0,
+                };
+            }
+        }
 
         setGeneratedAgentReport({
             agent,
             month: months[month].label,
             year,
             bookings: agentBookings,
-            totalRevenueGenerated,
-            totalCommission,
+            ...reportData
         });
 
         setGeneratingAgentReport(false);
