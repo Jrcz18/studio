@@ -4,7 +4,6 @@
 import { db } from '@/lib/firebase';
 import { collection, getDocs, addDoc, doc, updateDoc, deleteDoc } from 'firebase/firestore';
 import type { Expense } from '@/lib/types';
-import { getFirebaseAdmin } from '@/lib/firebase-admin';
 
 const expensesCollectionRef = collection(db, 'expenses');
 
@@ -29,13 +28,4 @@ export async function updateExpense(expenseData: Expense): Promise<void> {
 export async function deleteExpense(expenseId: string): Promise<void> {
     const expenseDoc = doc(db, 'expenses', expenseId);
     await deleteDoc(expenseDoc);
-}
-
-
-// SERVER-SIDE functions
-export async function getExpensesOnServer(): Promise<Expense[]> {
-    const { adminDb } = await getFirebaseAdmin();
-    const expensesCollection = adminDb.collection('expenses');
-    const snapshot = await expensesCollection.get();
-    return snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Expense));
 }

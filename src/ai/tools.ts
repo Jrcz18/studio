@@ -12,8 +12,8 @@
 
 import { ai } from '@/ai/genkit';
 import { z } from 'genkit';
-import { getBookingsOnServer } from '@/services/bookings';
-import { getExpensesOnServer } from '@/services/expenses';
+import { getBookings } from '@/services/bookings';
+import { getExpenses } from '@/services/expenses';
 
 // 1. Translation Tool (Fully Functional)
 export const translateText = ai.defineTool(
@@ -95,7 +95,7 @@ export const findLocalEvents = ai.defineTool(
   }
 );
 
-// 4. Google Search Tool (Functional)
+// 4. Google Search Tool (Placeholder)
 export const googleSearch = ai.defineTool(
   {
     name: 'googleSearch',
@@ -108,11 +108,18 @@ export const googleSearch = ai.defineTool(
   async (input) => {
     console.log(`Performing Google search for: "${input.query}"`);
     
+    // TODO: This is a placeholder. To make this functional, you need to:
+    // 1. Get a Google Custom Search API key and a Search Engine ID.
+    // 2. Add them to your .env file.
+    // 3. Uncomment and adapt the fetch call below.
+
+    return `Search results for "${input.query}" would appear here. The Google Search tool is not fully configured yet.`;
+    
+    /*
     const apiKey = process.env.GOOGLE_CUSTOM_SEARCH_API_KEY;
     const searchEngineId = process.env.GOOGLE_CUSTOM_SEARCH_ENGINE_ID;
 
     if (!apiKey || !searchEngineId) {
-      console.error("Google Search API Key or Search Engine ID is not configured.");
       return "Search is not configured. Please provide the necessary API keys in the .env file.";
     }
 
@@ -122,7 +129,6 @@ export const googleSearch = ai.defineTool(
       const response = await fetch(url);
       if (!response.ok) {
         const error = await response.json();
-        console.error("Google Search API Error:", error);
         return `Sorry, the search failed: ${error.error.message}`;
       }
       const data = await response.json();
@@ -142,11 +148,12 @@ export const googleSearch = ai.defineTool(
       console.error("Failed to execute Google Search:", error);
       return "Sorry, I was unable to perform the search at this time.";
     }
+    */
   }
 );
 
 
-// 5. Property Database Report Tool (Functional)
+// 5. Property Database Report Tool (Requires Server-Side Functions)
 export const getPropertyDatabaseReport = ai.defineTool(
   {
     name: 'getPropertyDatabaseReport',
@@ -160,9 +167,11 @@ export const getPropertyDatabaseReport = ai.defineTool(
   async (input) => {
     console.log(`Generating database report from ${input.startDate} to ${input.endDate}`);
     
+    // NOTE: This will fail because getBookings and getExpenses are client-side.
+    // This needs to be refactored to use server-side data fetching.
     try {
-        const allBookings = await getBookingsOnServer();
-        const allExpenses = await getExpensesOnServer();
+        const allBookings = await getBookings();
+        const allExpenses = await getExpenses();
 
         const start = new Date(input.startDate);
         const end = new Date(input.endDate);
