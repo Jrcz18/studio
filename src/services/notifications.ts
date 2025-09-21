@@ -4,6 +4,7 @@
 import { db } from '@/lib/firebase';
 import { collection, getDocs, addDoc, doc, updateDoc, query, where, getDoc, deleteDoc } from 'firebase/firestore';
 import type { AppNotification } from '@/lib/types';
+import { auth } from '@/lib/firebase';
 
 const notificationsCollection = collection(db, 'notifications');
 
@@ -17,9 +18,10 @@ export async function getNotification(notificationId: string): Promise<AppNotifi
     return null;
 }
 
-// Get all notifications for a user, sorted by most recent
-export async function getAllNotifications(userId: string): Promise<AppNotification[]> {
-    const q = query(notificationsCollection, where('userId', '==', userId));
+// Get all notifications for a user, or all notifications if no user is specified.
+// Sorted by most recent.
+export async function getAllNotifications(userId?: string): Promise<AppNotification[]> {
+    const q = userId ? query(notificationsCollection, where('userId', '==', userId)) : query(notificationsCollection);
     const snapshot = await getDocs(q);
     const notifications = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as AppNotification));
     // Sort manually to avoid needing a composite index
