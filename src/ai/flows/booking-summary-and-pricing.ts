@@ -10,37 +10,33 @@
 import {ai} from '@/ai/genkit';
 import {z} from 'genkit';
 
-const BookingSummaryInputSchema = z.object({
-  frequency: z
-    .enum(['daily', 'weekly', 'monthly'])
-    .describe('The frequency of the booking summary.'),
-  unitId: z.string().describe('The ID of the rental unit.'),
-  startDate: z.string().describe('The start date for the summary period.'),
-  endDate: z.string().describe('The end date for the summary period.'),
-  searchRateData: z
-    .record(z.string(), z.number())
-    .describe(
-      'A map of dates to search rates, used for dynamic pricing adjustments.'
-    ),
-});
-export type BookingSummaryInput = z.infer<typeof BookingSummaryInputSchema>;
-
-const BookingSummaryOutputSchema = z.object({
-  summary: z.string().describe('The booking summary.'),
-});
-export type BookingSummaryOutput = z.infer<typeof BookingSummaryOutputSchema>;
-
 export async function generateBookingSummary(
-  input: BookingSummaryInput
-): Promise<BookingSummaryOutput> {
-  return bookingSummaryFlow(input);
-}
+  input: z.infer<typeof BookingSummaryInputSchema>
+): Promise<z.infer<typeof BookingSummaryOutputSchema>> {
 
-const bookingSummaryPrompt = ai.definePrompt({
-  name: 'bookingSummaryPrompt',
-  input: {schema: BookingSummaryInputSchema},
-  output: {schema: BookingSummaryOutputSchema},
-  prompt: `You are an AI assistant that generates booking summaries for rental units.
+  const BookingSummaryInputSchema = z.object({
+    frequency: z
+      .enum(['daily', 'weekly', 'monthly'])
+      .describe('The frequency of the booking summary.'),
+    unitId: z.string().describe('The ID of the rental unit.'),
+    startDate: z.string().describe('The start date for the summary period.'),
+    endDate: z.string().describe('The end date for the summary period.'),
+    searchRateData: z
+      .record(z.string(), z.number())
+      .describe(
+        'A map of dates to search rates, used for dynamic pricing adjustments.'
+      ),
+  });
+  
+  const BookingSummaryOutputSchema = z.object({
+    summary: z.string().describe('The booking summary.'),
+  });
+
+  const bookingSummaryPrompt = ai.definePrompt({
+    name: 'bookingSummaryPrompt',
+    input: {schema: BookingSummaryInputSchema},
+    output: {schema: BookingSummaryOutputSchema},
+    prompt: `You are an AI assistant that generates booking summaries for rental units.
 
   Generate a {{frequency}} summary of bookings, pricing, and availability status for unit ID {{unitId}} from {{startDate}} to {{endDate}}.
 
@@ -59,16 +55,22 @@ const bookingSummaryPrompt = ai.definePrompt({
 
   The summary should be concise and easy to understand.
   `,
-});
+  });
 
-const bookingSummaryFlow = ai.defineFlow(
-  {
-    name: 'bookingSummaryFlow',
-    inputSchema: BookingSummaryInputSchema,
-    outputSchema: BookingSummaryOutputSchema,
-  },
-  async input => {
-    const {output} = await bookingSummaryPrompt(input);
-    return output!;
-  }
-);
+  const bookingSummaryFlow = ai.defineFlow(
+    {
+      name: 'bookingSummaryFlow',
+      inputSchema: BookingSummaryInputSchema,
+      outputSchema: BookingSummaryOutputSchema,
+    },
+    async input => {
+      const {output} = await bookingSummaryPrompt(input);
+      return output!;
+    }
+  );
+
+  return bookingSummaryFlow(input);
+}
+
+export type BookingSummaryInput = z.infer<typeof import('./booking-summary-and-pricing').generateBookingSummary extends (input: infer I, ...args: any[]) => any ? I : never>;
+export type BookingSummaryOutput = z.infer<typeof import('./booking-summary-and-pricing').generateBookingSummary extends (...args: any[]) => Promise<infer O> ? O : never>;

@@ -11,24 +11,21 @@
 import {ai} from '@/ai/genkit';
 import {z} from 'genkit';
 
-const ReportSummaryInputSchema = z.object({
-  unitName: z.string().describe('The name of the rental unit or "All Units".'),
-  month: z.string().describe('The month of the report (e.g., "January").'),
-  year: z.number().describe('The year of the report (e.g., 2024).'),
-  totalRevenue: z.number().describe('The total revenue for the month.'),
-  totalExpenses: z.number().describe('The total expenses for the month.'),
-  netProfit: z.number().describe('The net profit for the month.'),
-});
-export type ReportSummaryInput = z.infer<typeof ReportSummaryInputSchema>;
-
-const ReportSummaryOutputSchema = z.object({
-  summary: z.string().describe('A concise, insightful summary of the monthly report.'),
-});
-export type ReportSummaryOutput = z.infer<typeof ReportSummaryOutputSchema>;
-
 export async function generateReportSummary(
-  input: ReportSummaryInput
-): Promise<ReportSummaryOutput> {
+  input: z.infer<typeof ReportSummaryInputSchema>
+): Promise<z.infer<typeof ReportSummaryOutputSchema>> {
+  const ReportSummaryInputSchema = z.object({
+    unitName: z.string().describe('The name of the rental unit or "All Units".'),
+    month: z.string().describe('The month of the report (e.g., "January").'),
+    year: z.number().describe('The year of the report (e.g., 2024).'),
+    totalRevenue: z.number().describe('The total revenue for the month.'),
+    totalExpenses: z.number().describe('The total expenses for the month.'),
+    netProfit: z.number().describe('The net profit for the month.'),
+  });
+
+  const ReportSummaryOutputSchema = z.object({
+    summary: z.string().describe('A concise, insightful summary of the monthly report.'),
+  });
   
   const reportSummaryPrompt = ai.definePrompt({
     name: 'reportSummaryPrompt',
@@ -61,3 +58,7 @@ export async function generateReportSummary(
 
   return generateReportSummaryFlow(input);
 }
+
+
+export type ReportSummaryInput = z.infer<typeof import('./report-summary').generateReportSummary extends (input: infer I, ...args: any[]) => any ? I : never>;
+export type ReportSummaryOutput = z.infer<typeof import('./report-summary').generateReportSummary extends (...args: any[]) => Promise<infer O> ? O : never>;

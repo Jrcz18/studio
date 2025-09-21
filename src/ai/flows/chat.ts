@@ -65,3 +65,6 @@ export async function chat(
 
   return chatFlow(input);
 }
+
+export type ChatInput = z.infer<typeof import('./chat').chat extends (input: infer I, ...args: any[]) => any ? I : never>;
+export type ChatOutput = z.infer<typeof import('./chat').chat extends (...args: any[]) => Promise<infer O> ? O : never>;

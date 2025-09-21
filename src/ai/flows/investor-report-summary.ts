@@ -59,3 +59,7 @@ export async function generateInvestorReportSummary(
 
   return generateReportSummaryFlow(input);
 }
+
+
+export type InvestorReportSummaryInput = z.infer<typeof import('./investor-report-summary').generateInvestorReportSummary extends (input: infer I, ...args: any[]) => any ? I : never>;
+export type InvestorReportSummaryOutput = z.infer<typeof import('./investor-report-summary').generateInvestorReportSummary extends (...args: any[]) => Promise<infer O> ? O : never>;
