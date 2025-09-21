@@ -4,9 +4,6 @@
 import { db } from '@/lib/firebase';
 import { collection, getDocs, addDoc, deleteDoc, doc, updateDoc } from 'firebase/firestore';
 import type { Booking } from '@/lib/types';
-import { getUnit } from './units';
-import { sendDiscordNotification } from './discord';
-
 
 const bookingsCollection = collection(db, 'bookings');
 
@@ -16,18 +13,21 @@ export async function getBookings(): Promise<Booking[]> {
 }
 
 export async function addBooking(bookingData: Omit<Booking, 'id'>): Promise<string> {
-    const docRef = await addDoc(bookingsCollection, bookingData);
-    
-    try {
-        const unit = await getUnit(bookingData.unitId);
-        if (unit) {
-            await sendDiscordNotification({ ...bookingData, id: docRef.id, createdAt: new Date().toISOString() }, unit);
-        }
-    } catch (error) {
-        console.error("Failed to send Discord notification:", error);
-    }
+    const response = await fetch('https://mpbookingserver.vercel.app/api/booking', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(bookingData),
+    });
 
-    return docRef.id;
+    if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error || 'Failed to add booking via backend');
+    }
+    
+    const result = await response.json();
+    return result.id;
 }
 
 export async function updateBooking(bookingData: Booking): Promise<void> {
