@@ -180,7 +180,7 @@ export default function ReportsPage() {
         const performance = getMonthlyPerformance(investor.unitIds, year, month);
         const investorShare = (performance.netProfit > 0) ? (performance.netProfit * investor.sharePercentage) / 100 : 0;
         
-        const investorUnits = units.filter(u => investor.unitIds.includes(u.id!));
+        const investorUnits = units.filter(u => investor.unitIds!.includes(u.id!));
 
         setGeneratedInvestorReport({
             investor,
