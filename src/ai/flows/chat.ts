@@ -9,20 +9,21 @@
 
 import { ai } from '@/ai/genkit';
 import { z } from 'genkit';
+import { translateText, getWeather, findLocalEvents } from '@/ai/tools';
 
 const MessageSchema = z.object({
-  role: z.enum(['user', 'model']),
+  role: z.enum(['user', 'model', 'tool']),
   content: z.string(),
 });
 
 const ChatInputSchema = z.object({
   history: z.array(MessageSchema).describe('The conversation history.'),
-  prompt: z.string().describe('The user\'s latest message.'),
+  prompt: z.string().describe("The user's latest message."),
 });
 export type ChatInput = z.infer<typeof ChatInputSchema>;
 
 const ChatOutputSchema = z.object({
-  response: z.string().describe('The AI\'s response.'),
+  response: z.string().describe("The AI's response."),
 });
 export type ChatOutput = z.infer<typeof ChatOutputSchema>;
 
@@ -32,10 +33,17 @@ export async function chat(input: ChatInput): Promise<ChatOutput> {
       name: 'chatPrompt',
       input: { schema: ChatInputSchema },
       output: { schema: ChatOutputSchema },
-      prompt: `You are a helpful AI assistant integrated into a property management application. Answer the user's questions.
-      You do not have access to real-time information from the internet, so you cannot answer questions about current events, weather, or live data.
+      tools: [translateText, getWeather, findLocalEvents],
+      system: `You are a helpful AI assistant integrated into a property management application. 
+      
+      You have access to a few tools to help you answer questions.
+      - Use the translateText tool if the user asks for a translation.
+      - Use the getWeather tool if the user asks about the weather for a specific city.
+      - Use the findLocalEvents tool if the user asks about events, concerts, or festivals.
+      - Do not use tools for any other purpose.
 
-    {{#each history}}
+      You do not have access to real-time information from the general internet, so you cannot answer questions about current events or live data unless you use one of your tools.`,
+      prompt: `{{#each history}}
     {{role}}: {{content}}
     {{/each}}
     user: {{prompt}}
