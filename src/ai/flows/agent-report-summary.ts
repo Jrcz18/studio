@@ -11,7 +11,7 @@
 import { ai } from '@/ai/genkit';
 import { z } from 'genkit';
 
-export const AgentReportSummaryInputSchema = z.object({
+const AgentReportSummaryInputSchema = z.object({
   agentName: z.string().describe("The name of the agent."),
   month: z.string().describe('The month of the report (e.g., "January").'),
   year: z.number().describe('The year of the report (e.g., 2024).'),
@@ -21,7 +21,7 @@ export const AgentReportSummaryInputSchema = z.object({
 });
 export type AgentReportSummaryInput = z.infer<typeof AgentReportSummaryInputSchema>;
 
-export const AgentReportSummaryOutputSchema = z.object({
+const AgentReportSummaryOutputSchema = z.object({
   summary: z.string().describe("A concise, insightful summary of the agent's monthly report."),
 });
 export type AgentReportSummaryOutput = z.infer<typeof AgentReportSummaryOutputSchema>;
