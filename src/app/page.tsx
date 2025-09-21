@@ -4,15 +4,24 @@
 import { useRouter } from 'next/navigation';
 import { auth } from '@/lib/firebase';
 import { signInWithEmailAndPassword, browserSessionPersistence, browserLocalPersistence } from 'firebase/auth';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import Link from 'next/link';
+import { useAuth } from '@/hooks/use-auth';
 
 export default function Home() {
     const router = useRouter();
+    const { user, loading } = useAuth();
     const [email, setEmail] = useState('');
     const [password, setPassword] = useState('');
     const [rememberMe, setRememberMe] = useState(true);
     const [error, setError] = useState<string | null>(null);
+
+    useEffect(() => {
+        if (!loading && user) {
+            router.push('/dashboard');
+        }
+    }, [user, loading, router]);
+
 
     const handleLogin = async (e: React.FormEvent) => {
         e.preventDefault();
@@ -21,12 +30,20 @@ export default function Home() {
             const persistence = rememberMe ? browserLocalPersistence : browserSessionPersistence;
             await auth.setPersistence(persistence);
             await signInWithEmailAndPassword(auth, email, password);
-            router.push('/dashboard');
+            // The useEffect above will handle the redirect
         } catch (error: any) {
             setError(error.message);
             alert('Failed to log in. Please check your credentials.');
         }
     };
+
+    if (loading || user) {
+        return (
+            <div className="flex items-center justify-center min-h-screen bg-gray-50">
+                <p>Loading...</p>
+            </div>
+        );
+    }
 
   return (
     <main className="min-h-screen bg-white flex flex-col mx-auto">
