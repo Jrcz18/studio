@@ -2,14 +2,17 @@
 'use client';
 
 import { useEffect, useState } from "react";
-import type { Booking, Expense, Unit, Investor } from "@/lib/types";
+import type { Booking, Expense, Unit, Investor, Agent } from "@/lib/types";
 import { getBookings } from "@/services/bookings";
 import { getExpenses } from "@/services/expenses";
 import { getUnits } from "@/services/units";
 import { getInvestors } from "@/services/investors";
+import { getAgents } from "@/services/agents";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Button } from "@/components/ui/button";
 import { ReportView } from "@/components/dashboard/reports/report-view";
+import { AgentReportView } from "@/components/dashboard/reports/agent-report-view";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 
 const currentYear = new Date().getFullYear();
 const years = Array.from({ length: 5 }, (_, i) => currentYear - i);
@@ -25,37 +28,48 @@ export default function ReportsPage() {
     const [allExpenses, setAllExpenses] = useState<Expense[]>([]);
     const [units, setUnits] = useState<Unit[]>([]);
     const [investors, setInvestors] = useState<Investor[]>([]);
+    const [agents, setAgents] = useState<Agent[]>([]);
     const [loading, setLoading] = useState(true);
 
+    // State for Unit Report
     const [selectedUnitId, setSelectedUnitId] = useState<string>('all');
-    const [selectedMonth, setSelectedMonth] = useState<string>(String(new Date().getMonth()));
-    const [selectedYear, setSelectedYear] = useState<string>(String(new Date().getFullYear()));
-    
-    const [generating, setGenerating] = useState(false);
-    const [generatedReport, setGeneratedReport] = useState<any>(null);
+    const [selectedUnitMonth, setSelectedUnitMonth] = useState<string>(String(new Date().getMonth()));
+    const [selectedUnitYear, setSelectedUnitYear] = useState<string>(String(new Date().getFullYear()));
+    const [generatingUnitReport, setGeneratingUnitReport] = useState(false);
+    const [generatedUnitReport, setGeneratedUnitReport] = useState<any>(null);
+
+    // State for Agent Report
+    const [selectedAgentId, setSelectedAgentId] = useState<string | undefined>(undefined);
+    const [selectedAgentMonth, setSelectedAgentMonth] = useState<string>(String(new Date().getMonth()));
+    const [selectedAgentYear, setSelectedAgentYear] = useState<string>(String(new Date().getFullYear()));
+    const [generatingAgentReport, setGeneratingAgentReport] = useState(false);
+    const [generatedAgentReport, setGeneratedAgentReport] = useState<any>(null);
+
 
     useEffect(() => {
         async function fetchData() {
             setLoading(true);
-            const [bookingsData, expensesData, unitsData, investorsData] = await Promise.all([
+            const [bookingsData, expensesData, unitsData, investorsData, agentsData] = await Promise.all([
                 getBookings(),
                 getExpenses(),
                 getUnits(),
-                getInvestors()
+                getInvestors(),
+                getAgents()
             ]);
             setAllBookings(bookingsData);
             setAllExpenses(expensesData);
             setUnits(unitsData);
             setInvestors(investorsData);
+            setAgents(agentsData);
             setLoading(false);
         }
         fetchData();
     }, []);
 
-    const handleGenerateReport = () => {
-        setGenerating(true);
-        const year = parseInt(selectedYear);
-        const month = parseInt(selectedMonth);
+    const handleGenerateUnitReport = () => {
+        setGeneratingUnitReport(true);
+        const year = parseInt(selectedUnitYear);
+        const month = parseInt(selectedUnitMonth);
 
         let filteredBookings = allBookings;
         let filteredExpenses = allExpenses;
@@ -87,7 +101,7 @@ export default function ReportsPage() {
             investorShare = (netProfit * investor.sharePercentage) / 100;
         }
 
-        setGeneratedReport({
+        setGeneratedUnitReport({
             unit: unit || { name: 'All Units' },
             month: months[month].label,
             year,
@@ -99,8 +113,42 @@ export default function ReportsPage() {
             investor,
             investorShare
         });
-        setGenerating(false);
+        setGeneratingUnitReport(false);
     };
+
+    const handleGenerateAgentReport = () => {
+        if (!selectedAgentId) return;
+
+        setGeneratingAgentReport(true);
+        const year = parseInt(selectedAgentYear);
+        const month = parseInt(selectedAgentMonth);
+        const agent = agents.find(a => a.id === selectedAgentId);
+        if (!agent) {
+            setGeneratingAgentReport(false);
+            return;
+        }
+
+        const agentBookings = allBookings.filter(b => {
+            const bookingDate = new Date(b.checkinDate);
+            return b.agentId === selectedAgentId &&
+                   bookingDate.getFullYear() === year &&
+                   bookingDate.getMonth() === month;
+        });
+
+        const totalRevenueGenerated = agentBookings.reduce((sum, b) => sum + b.totalAmount, 0);
+        const totalCommission = (totalRevenueGenerated * agent.commissionRate) / 100;
+
+        setGeneratedAgentReport({
+            agent,
+            month: months[month].label,
+            year,
+            bookings: agentBookings,
+            totalRevenueGenerated,
+            totalCommission,
+        });
+
+        setGeneratingAgentReport(false);
+    }
 
     const overallStats = {
         totalRevenue: allBookings.reduce((acc, booking) => acc + booking.totalAmount, 0),
@@ -119,68 +167,95 @@ export default function ReportsPage() {
         <h2 className="text-xl font-bold text-gray-900">Reports</h2>
         <p className="text-sm text-gray-500">Financial performance overview</p>
       </div>
-
-      <div className="prime-card p-4 mb-4">
-        <h3 className="text-lg font-semibold text-gray-800 mb-4">All-Time Overview</h3>
-        <div className="grid grid-cols-2 gap-4">
-            <div className="text-center">
-                <p className="text-2xl font-bold text-green-600">₱{overallStats.totalRevenue.toLocaleString()}</p>
-                <p className="text-sm text-gray-600">Total Revenue</p>
-            </div>
-            <div className="text-center">
-                <p className="text-2xl font-bold text-red-600">₱{overallStats.totalExpenses.toLocaleString()}</p>
-                <p className="text-sm text-gray-600">Total Expenses</p>
-            </div>
-            <div className="text-center">
-                <p className="text-2xl font-bold text-yellow-600">₱{overallStats.netProfit.toLocaleString()}</p>
-                <p className="text-sm text-gray-600">Net Profit</p>
-            </div>
-            <div className="text-center">
-                <p className="text-2xl font-bold text-blue-600">{overallStats.profitMargin.toFixed(0)}%</p>
-                <p className="text-sm text-gray-600">Profit Margin</p>
-            </div>
-        </div>
-      </div>
       
-      <div className="prime-card p-4 mb-4">
-        <h3 className="text-lg font-semibold text-gray-800 mb-4">Generate Monthly Report</h3>
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-4">
-            <Select value={selectedUnitId} onValueChange={setSelectedUnitId}>
-                <SelectTrigger><SelectValue placeholder="Select Unit" /></SelectTrigger>
-                <SelectContent>
-                    <SelectItem value="all">All Units</SelectItem>
-                    {units.map(unit => (
-                        <SelectItem key={unit.id} value={unit.id!}>{unit.name}</SelectItem>
-                    ))}
-                </SelectContent>
-            </Select>
+      <Tabs defaultValue="unit" className="w-full">
+        <TabsList className="grid w-full grid-cols-3">
+          <TabsTrigger value="unit">Unit Report</TabsTrigger>
+          <TabsTrigger value="agent">Agent Report</TabsTrigger>
+          <TabsTrigger value="investor">Investor Report</TabsTrigger>
+        </TabsList>
+        <TabsContent value="unit">
+            <div className="prime-card p-4 my-4">
+                <h3 className="text-lg font-semibold text-gray-800 mb-4">Generate Monthly Unit Report</h3>
+                <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-4">
+                    <Select value={selectedUnitId} onValueChange={setSelectedUnitId}>
+                        <SelectTrigger><SelectValue placeholder="Select Unit" /></SelectTrigger>
+                        <SelectContent>
+                            <SelectItem value="all">All Units</SelectItem>
+                            {units.map(unit => (
+                                <SelectItem key={unit.id} value={unit.id!}>{unit.name}</SelectItem>
+                            ))}
+                        </SelectContent>
+                    </Select>
 
-             <Select value={selectedMonth} onValueChange={setSelectedMonth}>
-                <SelectTrigger><SelectValue placeholder="Select Month" /></SelectTrigger>
-                <SelectContent>
-                    {months.map(month => (
-                        <SelectItem key={month.value} value={String(month.value)}>{month.label}</SelectItem>
-                    ))}
-                </SelectContent>
-            </Select>
+                    <Select value={selectedUnitMonth} onValueChange={setSelectedUnitMonth}>
+                        <SelectTrigger><SelectValue placeholder="Select Month" /></SelectTrigger>
+                        <SelectContent>
+                            {months.map(month => (
+                                <SelectItem key={month.value} value={String(month.value)}>{month.label}</SelectItem>
+                            ))}
+                        </SelectContent>
+                    </Select>
 
-             <Select value={selectedYear} onValueChange={setSelectedYear}>
-                <SelectTrigger><SelectValue placeholder="Select Year" /></SelectTrigger>
-                <SelectContent>
-                    {years.map(year => (
-                        <SelectItem key={year} value={String(year)}>{year}</SelectItem>
-                    ))}
-                </SelectContent>
-            </Select>
-            <Button onClick={handleGenerateReport} className="prime-button w-full" disabled={generating}>
-              {generating ? 'Generating...' : 'Generate'}
-            </Button>
-        </div>
-      </div>
+                    <Select value={selectedUnitYear} onValueChange={setSelectedUnitYear}>
+                        <SelectTrigger><SelectValue placeholder="Select Year" /></SelectTrigger>
+                        <SelectContent>
+                            {years.map(year => (
+                                <SelectItem key={year} value={String(year)}>{year}</SelectItem>
+                            ))}
+                        </SelectContent>
+                    </Select>
+                    <Button onClick={handleGenerateUnitReport} className="prime-button w-full" disabled={generatingUnitReport}>
+                    {generatingUnitReport ? 'Generating...' : 'Generate'}
+                    </Button>
+                </div>
+            </div>
+            {generatedUnitReport && <ReportView report={generatedUnitReport} />}
+        </TabsContent>
+        <TabsContent value="agent">
+            <div className="prime-card p-4 my-4">
+                <h3 className="text-lg font-semibold text-gray-800 mb-4">Generate Monthly Agent Report</h3>
+                <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-4">
+                    <Select value={selectedAgentId} onValueChange={setSelectedAgentId}>
+                        <SelectTrigger><SelectValue placeholder="Select Agent" /></SelectTrigger>
+                        <SelectContent>
+                            {agents.map(agent => (
+                                <SelectItem key={agent.id} value={agent.id!}>{agent.name}</SelectItem>
+                            ))}
+                        </SelectContent>
+                    </Select>
 
-        {generatedReport && <ReportView report={generatedReport} />}
+                    <Select value={selectedAgentMonth} onValueChange={setSelectedAgentMonth}>
+                        <SelectTrigger><SelectValue placeholder="Select Month" /></SelectTrigger>
+                        <SelectContent>
+                            {months.map(month => (
+                                <SelectItem key={month.value} value={String(month.value)}>{month.label}</SelectItem>
+                            ))}
+                        </SelectContent>
+                    </Select>
+
+                    <Select value={selectedAgentYear} onValueChange={setSelectedAgentYear}>
+                        <SelectTrigger><SelectValue placeholder="Select Year" /></SelectTrigger>
+                        <SelectContent>
+                            {years.map(year => (
+                                <SelectItem key={year} value={String(year)}>{year}</SelectItem>
+                            ))}
+                        </SelectContent>
+                    </Select>
+                    <Button onClick={handleGenerateAgentReport} className="prime-button w-full" disabled={generatingAgentReport || !selectedAgentId}>
+                    {generatingAgentReport ? 'Generating...' : 'Generate'}
+                    </Button>
+                </div>
+            </div>
+            {generatedAgentReport && <AgentReportView report={generatedAgentReport} />}
+        </TabsContent>
+        <TabsContent value="investor">
+            <div className="prime-card p-4 my-4">
+                <h3 className="text-lg font-semibold text-gray-800 mb-4">Investor Reports</h3>
+                <p className="text-sm text-gray-500 text-center py-8">Investor reporting feature is coming soon.</p>
+            </div>
+        </TabsContent>
+      </Tabs>
     </div>
   );
 }
-
-    
