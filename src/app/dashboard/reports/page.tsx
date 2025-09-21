@@ -170,7 +170,9 @@ export default function ReportsPage() {
         const year = parseInt(selectedInvestorYear);
         const month = parseInt(selectedInvestorMonth);
         const investor = investors.find(i => i.id === selectedInvestorId);
-        if (!investor) {
+        
+        if (!investor || !investor.unitIds || investor.unitIds.length === 0) {
+            alert('This investor has no units assigned. Please edit the investor to assign units.');
             setGeneratingInvestorReport(false);
             return;
         }
