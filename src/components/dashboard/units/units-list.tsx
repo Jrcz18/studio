@@ -29,15 +29,6 @@ export function UnitsList({ units, onEdit, onDelete }: UnitsListProps) {
 
 function UnitCard({ unit, onEdit, onDelete }: { unit: Unit, onEdit: (unit: Unit) => void, onDelete: (unitId: string) => void }) {
   const [masterUrlCopied, setMasterUrlCopied] = useState(false);
-  const [baseUrl, setBaseUrl] = useState('');
-
-  useEffect(() => {
-    // Dynamically determine the base URL.
-    if (typeof window !== 'undefined') {
-      setBaseUrl(window.location.origin);
-    }
-  }, []);
-
 
   const statusVariant = {
     available: 'bg-green-100 text-green-800',
@@ -46,8 +37,6 @@ function UnitCard({ unit, onEdit, onDelete }: { unit: Unit, onEdit: (unit: Unit)
   };
 
   const handleCopyMasterUrl = () => {
-    // This assumes the new backend exposes a similar master URL structure.
-    // This might need to be updated based on the new backend's API.
     const url = `https://mpbookingserver.vercel.app/api/ical/${unit.id}`;
     navigator.clipboard.writeText(url);
     setMasterUrlCopied(true);
