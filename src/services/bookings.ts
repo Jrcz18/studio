@@ -4,6 +4,8 @@
 import { db } from '@/lib/firebase';
 import { collection, getDocs, addDoc, deleteDoc, doc, updateDoc } from 'firebase/firestore';
 import type { Booking } from '@/lib/types';
+import { addNotification } from './notifications';
+import { auth } from '@/lib/firebase';
 
 const bookingsCollection = collection(db, 'bookings');
 
@@ -31,7 +33,24 @@ export async function addBooking(bookingData: Omit<Booking, 'id'>): Promise<stri
     }
     
     const result = await response.json();
-    return result.id;
+    const bookingId = result.id;
+
+    // Create a notification
+    const user = auth.currentUser;
+    if (user) {
+        await addNotification({
+            userId: user.uid,
+            type: 'booking',
+            title: 'New Booking Created',
+            description: `Booking for ${bookingData.guestFirstName} ${bookingData.guestLastName} was successfully created.`,
+            isRead: false,
+            createdAt: new Date().toISOString(),
+            link: `/dashboard/bookings?bookingId=${bookingId}`,
+            data: { bookingId }
+        });
+    }
+
+    return bookingId;
 }
 
 export async function updateBooking(bookingData: Booking): Promise<void> {

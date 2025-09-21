@@ -1,4 +1,5 @@
 
+
 export type Unit = {
   id?: string;
   name: string;
@@ -127,4 +128,16 @@ export type ReceiptSettings = {
     contactPhone?: string;
     checkinTime: string;
     checkoutTime: string;
+};
+
+export type AppNotification = {
+    id?: string;
+    userId: string;
+    type: 'booking' | 'expense' | 'reminder' | 'event' | 'system';
+    title: string;
+    description: string;
+    createdAt: string;
+    isRead: boolean;
+    link?: string;
+    data?: Record<string, any>;
 };
