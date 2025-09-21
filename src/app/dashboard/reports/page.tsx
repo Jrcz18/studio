@@ -167,8 +167,6 @@ export default function ReportsPage() {
         if (!selectedInvestorId) return;
 
         setGeneratingInvestorReport(true);
-        const year = parseInt(selectedInvestorYear);
-        const month = parseInt(selectedInvestorMonth);
         const investor = investors.find(i => i.id === selectedInvestorId);
         
         if (!investor || !investor.unitIds || investor.unitIds.length === 0) {
@@ -177,6 +175,8 @@ export default function ReportsPage() {
             return;
         }
 
+        const year = parseInt(selectedInvestorYear);
+        const month = parseInt(selectedInvestorMonth);
         const performance = getMonthlyPerformance(investor.unitIds, year, month);
         const investorShare = (performance.netProfit > 0) ? (performance.netProfit * investor.sharePercentage) / 100 : 0;
         
@@ -207,10 +207,10 @@ export default function ReportsPage() {
       </div>
       
       <Tabs defaultValue="unit" className="w-full">
-        <TabsList className="grid w-full grid-cols-3">
-          <TabsTrigger value="unit">Unit Report</TabsTrigger>
-          <TabsTrigger value="agent">Agent Report</TabsTrigger>
-          <TabsTrigger value="investor">Investor Report</TabsTrigger>
+        <TabsList className="grid w-full grid-cols-3 bg-gray-200 rounded-lg p-1">
+          <TabsTrigger value="unit" className="data-[state=active]:bg-yellow-400 data-[state=active]:text-black data-[state=active]:shadow-md rounded-md">Unit Report</TabsTrigger>
+          <TabsTrigger value="agent" className="data-[state=active]:bg-yellow-400 data-[state=active]:text-black data-[state=active]:shadow-md rounded-md">Agent Report</TabsTrigger>
+          <TabsTrigger value="investor" className="data-[state=active]:bg-yellow-400 data-[state=active]:text-black data-[state=active]:shadow-md rounded-md">Investor Report</TabsTrigger>
         </TabsList>
         <TabsContent value="unit">
             <div className="prime-card p-4 my-4">
