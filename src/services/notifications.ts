@@ -9,21 +9,17 @@ const notificationsCollection = collection(db, 'notifications');
 
 // Get all notifications for a user, sorted by most recent
 export async function getAllNotifications(userId: string): Promise<AppNotification[]> {
-    const q = query(notificationsCollection, where('userId', '==', userId), orderBy('createdAt', 'desc'));
+    const q = query(notificationsCollection, where('userId', '==', userId));
     const snapshot = await getDocs(q);
-    return snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as AppNotification));
+    const notifications = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as AppNotification));
+    // Sort manually to avoid needing a composite index
+    return notifications.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
 }
 
 // Get only unread notifications for a user
 export async function getUnreadNotifications(userId: string): Promise<AppNotification[]> {
-    const q = query(
-        notificationsCollection,
-        where('userId', '==', userId),
-        where('isRead', '==', false),
-        orderBy('createdAt', 'desc')
-    );
-    const snapshot = await getDocs(q);
-    return snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as AppNotification));
+    const allNotifications = await getAllNotifications(userId);
+    return allNotifications.filter(n => !n.isRead);
 }
 
 
@@ -45,8 +41,14 @@ export async function markAllNotificationsAsRead(userId: string): Promise<void> 
     const q = query(notificationsCollection, where('userId', '==', userId), where('isRead', '==', false));
     const snapshot = await getDocs(q);
     
-    const promises = snapshot.docs.map(document => 
-        updateDoc(doc(db, 'notifications', document.id), { isRead: true })
+    // This query requires a composite index: userId (asc), isRead (asc)
+    // If that index is deleted, this will fail. A more robust way without the index:
+    const allNotifications = await getAllNotifications(userId);
+    const unreadNotifications = allNotifications.filter(n => !n.isRead);
+
+    const promises = unreadNotifications.map(notification => 
+        updateDoc(doc(db, 'notifications', notification.id!), { isRead: true })
     );
     await Promise.all(promises);
 }
+
