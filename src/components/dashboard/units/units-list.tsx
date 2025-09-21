@@ -3,9 +3,9 @@
 
 import { useState, useEffect } from 'react';
 import type { Unit, SyncedEvent, Platform } from '@/lib/types';
+import { syncCalendars } from '@/app/actions/sync-calendars';
 import { formatDate } from '@/lib/utils';
 import { Calendar, Link as LinkIcon, List, Copy, Check } from 'lucide-react';
-import { callApi } from '@/services/utils';
 
 interface UnitsListProps {
   units: Unit[];
@@ -77,7 +77,7 @@ function UnitCard({ unit, onEdit, onDelete }: { unit: Unit, onEdit: (unit: Unit)
         return;
       }
       
-      const result = await callApi('sync-calendars', { unitCalendars: unit.calendars, unitId: unit.id });
+      const result = await syncCalendars(unit.calendars, unit.id);
       setEvents(result);
 
       if (result.length === 0 && !isAutoSync) {

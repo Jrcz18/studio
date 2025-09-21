@@ -2,18 +2,18 @@
 'use server';
 
 import type { SyncedEvent, Unit, Booking, Platform } from '@/lib/types';
-import { collection, addDoc, getDocs, query, where } from 'firebase/firestore';
-import { db } from '@/lib/firebase';
 import { getUnit } from '@/services/units';
-import { CalendarService } from '@/services/calendar';
+import { fetchAndParseCalendar } from '@/services/calendar';
 import { sendDiscordNotification } from '@/services/discord';
+import { getFirebaseAdmin } from '@/lib/firebase-admin';
 
 async function getExistingBookingUIDs(unitId: string, uidsToFetch: string[]): Promise<string[]> {
     if (uidsToFetch.length === 0) {
         return [];
     }
 
-    const bookingsCollection = collection(db, 'bookings');
+    const { adminDb } = await getFirebaseAdmin();
+    const bookingsCollection = adminDb.collection('bookings');
     const batches: string[][] = [];
     for (let i = 0; i < uidsToFetch.length; i += 30) {
         batches.push(uidsToFetch.slice(i, i + 30));
@@ -22,12 +22,10 @@ async function getExistingBookingUIDs(unitId: string, uidsToFetch: string[]): Pr
     const existingUIDs = new Set<string>();
 
     for (const batch of batches) {
-        const q = query(
-            bookingsCollection,
-            where('unitId', '==', unitId),
-            where('uid', 'in', batch)
-        );
-        const querySnapshot = await getDocs(q);
+        const q = bookingsCollection
+            .where('unitId', '==', unitId)
+            .where('uid', 'in', batch);
+        const querySnapshot = await q.get();
         querySnapshot.forEach(doc => {
             const booking = doc.data() as Booking;
             if (booking.uid) {
@@ -40,7 +38,8 @@ async function getExistingBookingUIDs(unitId: string, uidsToFetch: string[]): Pr
 }
 
 async function createBookingFromEvent(event: SyncedEvent, unit: Unit): Promise<void> {
-    const bookingsCollection = collection(db, 'bookings');
+    const { adminDb } = await getFirebaseAdmin();
+    const bookingsCollection = adminDb.collection('bookings');
     
     const newBookingData: Omit<Booking, 'id' | 'createdAt'> = {
         uid: event.uid,
@@ -59,12 +58,11 @@ async function createBookingFromEvent(event: SyncedEvent, unit: Unit): Promise<v
         specialRequests: `Synced from ${event.platform}: ${event.summary}`,
     };
 
-    const docRef = await addDoc(bookingsCollection, {
+    const docRef = await bookingsCollection.add({
         ...newBookingData,
         createdAt: new Date().toISOString()
     });
     
-    // The Discord notification is handled by the Vercel backend.
     await sendDiscordNotification({ ...newBookingData, id: docRef.id, createdAt: new Date().toISOString() }, unit);
 }
 
@@ -81,7 +79,7 @@ export async function syncCalendars(unitCalendars: Unit['calendars'], unitId: st
     const processCalendar = async (url: string, platform: Platform) => {
         if (url) {
             try {
-                const events = await CalendarService.fetchAndParseCalendar(url);
+                const events = await fetchAndParseCalendar(url);
                 const platformEvents: SyncedEvent[] = events.map(e => ({...e, platform}));
                 allEvents.push(...platformEvents);
             } catch (error) {
