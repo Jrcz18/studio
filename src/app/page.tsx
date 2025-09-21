@@ -3,7 +3,7 @@
 
 import { useRouter } from 'next/navigation';
 import { auth } from '@/lib/firebase';
-import { signInWithEmailAndPassword } from 'firebase/auth';
+import { signInWithEmailAndPassword, browserSessionPersistence, browserLocalPersistence } from 'firebase/auth';
 import { useState } from 'react';
 import Link from 'next/link';
 
@@ -11,12 +11,15 @@ export default function Home() {
     const router = useRouter();
     const [email, setEmail] = useState('');
     const [password, setPassword] = useState('');
+    const [rememberMe, setRememberMe] = useState(true);
     const [error, setError] = useState<string | null>(null);
 
     const handleLogin = async (e: React.FormEvent) => {
         e.preventDefault();
         setError(null);
         try {
+            const persistence = rememberMe ? browserLocalPersistence : browserSessionPersistence;
+            await auth.setPersistence(persistence);
             await signInWithEmailAndPassword(auth, email, password);
             router.push('/dashboard');
         } catch (error: any) {
@@ -48,6 +51,10 @@ export default function Home() {
               </div>
 
               <div className="flex items-center justify-between text-sm">
+                 <div className="flex items-center gap-2">
+                    <input type="checkbox" id="rememberMe" checked={rememberMe} onChange={(e) => setRememberMe(e.target.checked)} className="h-4 w-4 rounded border-gray-300 text-yellow-600 focus:ring-yellow-500" />
+                    <label htmlFor="rememberMe" className="text-gray-700">Remember me</label>
+                 </div>
                 <Link href="/reset-password" id="forgotPasswordLink" className="font-medium text-yellow-600 hover:text-yellow-500">
                     Forgot your password?
                 </Link>

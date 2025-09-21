@@ -3,7 +3,7 @@
 
 import { useState, useEffect, createContext, useContext, ReactNode } from 'react';
 import { auth } from '@/lib/firebase';
-import { onAuthStateChanged, signOut, User, sendPasswordResetEmail, indexedDBLocalPersistence, setPersistence } from 'firebase/auth';
+import { onAuthStateChanged, signOut, User, sendPasswordResetEmail } from 'firebase/auth';
 import { useRouter } from 'next/navigation';
 
 interface AuthContextType {
@@ -21,20 +21,11 @@ export const AppAuthProvider = ({ children }: { children: ReactNode }) => {
   const router = useRouter();
 
   useEffect(() => {
-    // Set persistence to indexedDB to ensure session is saved across app closures
-    setPersistence(auth, indexedDBLocalPersistence)
-      .then(() => {
-        // This listener now runs after persistence has been set
-        const unsubscribe = onAuthStateChanged(auth, (user) => {
-          setUser(user);
-          setLoading(false);
-        });
-        return unsubscribe;
-      })
-      .catch((error) => {
-        console.error("Error setting auth persistence:", error);
-        setLoading(false);
-      });
+    const unsubscribe = onAuthStateChanged(auth, (user) => {
+      setUser(user);
+      setLoading(false);
+    });
+    return unsubscribe;
   }, []);
 
   const logout = async () => {
