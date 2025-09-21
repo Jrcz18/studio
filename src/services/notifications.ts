@@ -2,7 +2,7 @@
 'use client';
 
 import { db } from '@/lib/firebase';
-import { collection, getDocs, addDoc, doc, updateDoc, query, where, getDoc } from 'firebase/firestore';
+import { collection, getDocs, addDoc, doc, updateDoc, query, where, getDoc, deleteDoc } from 'firebase/firestore';
 import type { AppNotification } from '@/lib/types';
 
 const notificationsCollection = collection(db, 'notifications');
@@ -37,7 +37,6 @@ export async function getUnreadNotifications(userId: string): Promise<AppNotific
 export async function addNotification(notificationData: Omit<AppNotification, 'id' | 'link'>): Promise<string> {
     const docRef = await addDoc(notificationsCollection, {
         ...notificationData,
-        link: `/dashboard/notifications/${(await docRef).id}`
     });
     // Now update the document with its own ID in the link
     await updateDoc(docRef, { link: `/dashboard/notifications/${docRef.id}`});
@@ -60,4 +59,11 @@ export async function markAllNotificationsAsRead(userId: string): Promise<void> 
         updateDoc(doc(db, 'notifications', notification.id!), { isRead: true })
     );
     await Promise.all(promises);
+}
+
+// Delete a specific notification
+export async function deleteNotification(notificationId: string): Promise<void> {
+    if (!notificationId) throw new Error("Notification ID is required to delete.");
+    const notificationDoc = doc(db, 'notifications', notificationId);
+    await deleteDoc(notificationDoc);
 }
