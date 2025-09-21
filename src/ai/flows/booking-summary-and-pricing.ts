@@ -41,20 +41,17 @@ export async function generateBookingSummary(
 
   Generate a {{frequency}} summary of bookings, pricing, and availability status for unit ID {{unitId}} from {{startDate}} to {{endDate}}.
 
-  Include the following information for each booking:
-  - Booking platform
-  - Start and end date
-  - Revenue generated
-  - Cleaning schedule
+  The summary must include:
+  1. A short, natural language summary of performance (e.g., "Unit 3 had 5 nights booked this week, generating ₱15,000. Occupancy is 20% higher than last month.").
+  2. A list of all bookings with platform, dates, and revenue.
+  3. A dynamic housekeeping schedule, generating a daily cleaning/maintenance checklist sorted by urgency (e.g., check-outs are high priority).
 
-  Adjust pricing dynamically based on the following search rate data:
+  Adjust pricing dynamically based on the following search rate data. Increase prices on dates with high search rates and decrease prices when search rates are low to optimize revenue.
   {{#each searchRateData}}
   - Date: {{@key}}, Search Rate: {{this}}
   {{/each}}
 
-  Increase prices on dates with high search rates and decrease prices when search rates are low to optimize revenue.
-
-  The summary should be concise and easy to understand.
+  The final output should be concise and easy for a property manager to understand and act on.
   `,
   });
 
@@ -75,3 +72,4 @@ export async function generateBookingSummary(
 
 export type BookingSummaryInput = z.infer<typeof import('./booking-summary-and-pricing').generateBookingSummary extends (input: infer I, ...args: any[]) => any ? I : never>;
 export type BookingSummaryOutput = z.infer<typeof import('./booking-summary-and-pricing').generateBookingSummary extends (...args: any[]) => Promise<infer O> ? O : never>;
+
