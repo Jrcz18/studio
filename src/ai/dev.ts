@@ -13,3 +13,4 @@ import '@/ai/flows/chat.ts';
 import '@/ai/tools.ts';
 import '@/ai/flows/agent-report-summary.ts';
 import '@/ai/flows/investor-report-summary.ts';
+import '@/ai/flows/generate-unit-health-report.ts';

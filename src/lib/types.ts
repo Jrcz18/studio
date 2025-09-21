@@ -1,6 +1,7 @@
 
 
 
+
 export type Unit = {
   id?: string;
   name: string;
@@ -11,6 +12,7 @@ export type Unit = {
   extraGuestFee: number; // New field for extra guest fee
   status: 'available' | 'occupied' | 'maintenance';
   description: string;
+  healthScore?: number; // New field for health score
   calendars: {
     airbnb: string;
     bookingcom: string;
@@ -96,6 +98,16 @@ export type ProfitPayment = {
     paymentMethod: 'bank_transfer' | 'gcash' | 'cash' | 'check';
     notes: string;
     status: 'paid';
+};
+
+export type UnitIncident = {
+  id?: string;
+  unitId: string;
+  date: string;
+  type: 'complaint' | 'maintenance' | 'staff_note' | 'damage';
+  severity: 'low' | 'medium' | 'high';
+  description: string;
+  isResolved: boolean;
 };
 
 export type Platform = 'Airbnb' | 'Booking.com' | 'Direct';
