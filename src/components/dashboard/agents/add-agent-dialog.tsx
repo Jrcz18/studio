@@ -183,7 +183,7 @@ export function AddAgentDialog({
           ) : (
             <div className="grid grid-cols-4 items-center gap-4">
               <Label htmlFor="agentMarkup" className="text-right">
-                Markup (₱)
+                Standard Price (₱)
               </Label>
               <Input
                 id="agentMarkup"

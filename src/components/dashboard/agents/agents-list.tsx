@@ -49,7 +49,7 @@ export function AgentsList({ agents, onEdit, onDelete }: AgentsListProps) {
                 <p>
                   <strong>Commission:</strong>{' '}
                   {agent.commissionType === 'fixed_markup'
-                    ? `₱${agent.commissionMarkup.toLocaleString()} per booking`
+                    ? `Surplus over unit rate`
                     : `${agent.commissionRate}% of revenue`}
                 </p>
                 <p>
