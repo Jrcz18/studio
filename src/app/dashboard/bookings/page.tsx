@@ -58,7 +58,7 @@ export default function BookingsPage() {
     setIsEditBookingOpen(true);
   };
 
-  const addBooking = async (newBookingData: Omit<Booking, 'id' | 'createdAt'>) => {
+  const addBooking = async (newBookingData: Omit<Booking, 'id' | 'createdAt'>, options: { sendAdminEmail: boolean }) => {
     const newBooking: Omit<Booking, 'id'> = {
       ...newBookingData,
       createdAt: new Date().toISOString(),
@@ -67,30 +67,32 @@ export default function BookingsPage() {
     const fullBooking = { ...newBooking, id };
     setBookings((prev) => [...prev, fullBooking]);
 
-    // Send admin notification
-    try {
-      const unit = units.find(u => u.id === fullBooking.unitId);
-      if (unit) {
-        await sendAdminBookingNotification({
-          guestName: `${fullBooking.guestFirstName} ${fullBooking.guestLastName}`,
-          guestContact: fullBooking.guestPhone,
-          numberOfGuests: fullBooking.adults + fullBooking.children,
-          checkinDate: fullBooking.checkinDate,
-          checkoutDate: fullBooking.checkoutDate,
-          unitName: unit.name,
-        });
-        toast({
-          title: 'Admin Notified',
-          description: 'An email has been sent to the building admin.',
-        });
+    if (options.sendAdminEmail) {
+      // Send admin notification
+      try {
+        const unit = units.find(u => u.id === fullBooking.unitId);
+        if (unit) {
+          await sendAdminBookingNotification({
+            guestName: `${fullBooking.guestFirstName} ${fullBooking.guestLastName}`,
+            guestContact: fullBooking.guestPhone,
+            numberOfGuests: fullBooking.adults + fullBooking.children,
+            checkinDate: fullBooking.checkinDate,
+            checkoutDate: fullBooking.checkoutDate,
+            unitName: unit.name,
+          });
+          toast({
+            title: 'Admin Notified',
+            description: 'An email has been sent to the building admin.',
+          });
+        }
+      } catch (error) {
+        console.error('Failed to send admin notification:', error);
+         toast({
+            title: 'Notification Failed',
+            description: 'Could not send email to the building admin.',
+            variant: 'destructive',
+         });
       }
-    } catch (error) {
-      console.error('Failed to send admin notification:', error);
-       toast({
-          title: 'Notification Failed',
-          description: 'Could not send email to the building admin.',
-          variant: 'destructive',
-       });
     }
   };
 

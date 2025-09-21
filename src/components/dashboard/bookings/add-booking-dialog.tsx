@@ -22,6 +22,7 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import { Textarea } from '@/components/ui/textarea';
+import { Checkbox } from '@/components/ui/checkbox';
 
 export function AddBookingDialog({
   children,
@@ -34,7 +35,10 @@ export function AddBookingDialog({
   children?: React.ReactNode;
   open: boolean;
   onOpenChange: (open: boolean) => void;
-  onAddBooking: (booking: Omit<Booking, 'id' | 'createdAt'>) => void;
+  onAddBooking: (
+    booking: Omit<Booking, 'id' | 'createdAt'>,
+    options: { sendAdminEmail: boolean }
+  ) => void;
   units: Unit[];
   agents: Agent[];
 }) {
@@ -47,6 +51,7 @@ export function AddBookingDialog({
   const [checkoutDate, setCheckoutDate] = useState('');
   const [adults, setAdults] = useState(2);
   const [numChildren, setChildren] = useState(0);
+  const [sendAdminEmail, setSendAdminEmail] = useState(true);
 
   useEffect(() => {
     if (selectedUnitId && checkinDate && checkoutDate) {
@@ -85,6 +90,7 @@ export function AddBookingDialog({
       setSelectedUnitId(undefined);
       setAdults(2);
       setChildren(0);
+      setSendAdminEmail(true);
       const today = new Date().toISOString().split('T')[0];
       setCheckinDate(today);
       const tomorrow = new Date(today);
@@ -125,7 +131,7 @@ export function AddBookingDialog({
         | 'paid',
       specialRequests: formData.get('specialRequests') as string,
     };
-    onAddBooking(newBooking);
+    onAddBooking(newBooking, { sendAdminEmail });
     onOpenChange(false);
   };
 
@@ -263,6 +269,19 @@ export function AddBookingDialog({
               id="specialRequests"
               placeholder="Any special requests or notes..."
             />
+          </div>
+           <div className="flex items-center space-x-2">
+            <Checkbox
+              id="sendAdminEmail"
+              checked={sendAdminEmail}
+              onCheckedChange={(checked) => setSendAdminEmail(!!checked)}
+            />
+            <label
+              htmlFor="sendAdminEmail"
+              className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
+            >
+              Send Admin Notification Email
+            </label>
           </div>
           <DialogFooter>
             <Button type="submit">Add Booking</Button>
