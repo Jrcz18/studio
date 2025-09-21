@@ -2,10 +2,9 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import type { Unit, SyncedEvent, Platform } from '@/lib/types';
-import { syncCalendars } from '@/app/actions/sync-calendars';
+import type { Unit } from '@/lib/types';
 import { formatDate } from '@/lib/utils';
-import { Calendar, Link as LinkIcon, List, Copy, Check } from 'lucide-react';
+import { Link as LinkIcon, Copy, Check } from 'lucide-react';
 
 interface UnitsListProps {
   units: Unit[];
@@ -29,21 +28,15 @@ export function UnitsList({ units, onEdit, onDelete }: UnitsListProps) {
 }
 
 function UnitCard({ unit, onEdit, onDelete }: { unit: Unit, onEdit: (unit: Unit) => void, onDelete: (unitId: string) => void }) {
-  const [loading, setLoading] = useState(false);
-  const [events, setEvents] = useState<SyncedEvent[]>([]);
-  const [error, setError] = useState<string | null>(null);
   const [masterUrlCopied, setMasterUrlCopied] = useState(false);
   const [baseUrl, setBaseUrl] = useState('');
 
   useEffect(() => {
     // Dynamically determine the base URL.
-    // This will be the Vercel URL when deployed, or localhost during development.
     if (typeof window !== 'undefined') {
       setBaseUrl(window.location.origin);
     }
-    
-    handleSync(true); // Auto-sync on component mount silently
-  }, [unit.id]); // Re-run if unit ID changes
+  }, []);
 
 
   const statusVariant = {
@@ -51,51 +44,11 @@ function UnitCard({ unit, onEdit, onDelete }: { unit: Unit, onEdit: (unit: Unit)
     occupied: 'bg-red-100 text-red-800',
     maintenance: 'bg-yellow-100 text-yellow-800',
   };
-  
-  const platformColors: Record<Platform, string> = {
-    'Airbnb': 'bg-red-50 text-red-700 border-red-200',
-    'Booking.com': 'bg-blue-50 text-blue-700 border-blue-200',
-    'Direct': 'bg-green-50 text-green-700 border-green-200',
-  };
-
-  const handleSync = async (isAutoSync = false) => {
-    if (!unit.id) return;
-
-    if (!isAutoSync) {
-        setLoading(true);
-    }
-    setError(null);
-    if (!isAutoSync) {
-        setEvents([]);
-    }
-    try {
-      if(!unit.calendars.airbnb && !unit.calendars.bookingcom && !unit.calendars.direct) {
-        if (!isAutoSync) {
-            setError("Please provide at least one calendar URL to sync.");
-        }
-        setLoading(false);
-        return;
-      }
-      
-      const result = await syncCalendars(unit.calendars, unit.id);
-      setEvents(result);
-
-      if (result.length === 0 && !isAutoSync) {
-        setError('No new events found in the provided calendars. The URLs might be incorrect, empty, or placeholder examples.');
-      }
-    } catch (e) {
-      console.error('Syncing failed:', e);
-       if (!isAutoSync) {
-        const message = e instanceof Error ? e.message : 'An unknown error occurred.';
-        setError(`An error occurred while syncing: ${message}`);
-       }
-    } finally {
-      setLoading(false);
-    }
-  };
 
   const handleCopyMasterUrl = () => {
-    const url = `${baseUrl}/api/ical/${unit.id}`;
+    // This assumes the new backend exposes a similar master URL structure.
+    // This might need to be updated based on the new backend's API.
+    const url = `https://mpbookingserver.vercel.app/api/ical/${unit.id}`;
     navigator.clipboard.writeText(url);
     setMasterUrlCopied(true);
     setTimeout(() => setMasterUrlCopied(false), 2000);
@@ -124,7 +77,7 @@ function UnitCard({ unit, onEdit, onDelete }: { unit: Unit, onEdit: (unit: Unit)
         </div>
         <p className="text-sm text-gray-600 mb-4">{unit.description}</p>
         
-        <div className="border-t border-b border-gray-200 py-4">
+        <div className="border-t border-gray-200 py-4">
           <h4 className="font-semibold text-gray-800 mb-2">Calendar Sync</h4>
 
           {/* Master Calendar URL */}
@@ -135,7 +88,7 @@ function UnitCard({ unit, onEdit, onDelete }: { unit: Unit, onEdit: (unit: Unit)
                 <input 
                   type="text" 
                   readOnly 
-                  value={baseUrl ? `${baseUrl}/api/ical/${unit.id}`: 'Loading...'}
+                  value={`https://mpbookingserver.vercel.app/api/ical/${unit.id}`}
                   className="p-2 text-sm bg-transparent w-full outline-none"
                 />
                 <button 
@@ -167,50 +120,6 @@ function UnitCard({ unit, onEdit, onDelete }: { unit: Unit, onEdit: (unit: Unit)
               <span className="truncate text-gray-500">{unit.calendars.direct || 'Not set'}</span>
             </p>
           </div>
-          <button
-            onClick={() => handleSync()}
-            className="w-full fb-btn fb-btn-primary"
-            disabled={loading}
-          >
-            {loading ? 'Syncing...' : 'Sync Now'}
-          </button>
-          
-          {loading && (
-            <div className="text-center p-4">
-              <p className="text-gray-600">Fetching and parsing calendar data...</p>
-            </div>
-          )}
-
-          {error && (
-            <div className="bg-yellow-50 border border-yellow-200 text-yellow-800 p-3 rounded-lg text-sm mt-4">
-              <p>{error}</p>
-            </div>
-          )}
-
-          {events.length > 0 && (
-            <div className="mt-4">
-              <h4 className="font-semibold text-gray-800 mb-2 flex items-center">
-                <List className="w-5 h-5 mr-2" />
-                Synced Bookings
-              </h4>
-              <div className="space-y-2 max-h-60 overflow-y-auto pr-2">
-                {events.map((event) => (
-                  <div key={event.uid} className="p-3 rounded-lg border border-gray-200 bg-gray-50">
-                     <div className="flex items-center justify-between">
-                       <p className="font-semibold text-gray-800 truncate">{event.summary}</p>
-                       <span className={`px-2 py-1 text-xs font-semibold rounded-full border ${platformColors[event.platform]}`}>
-                         {event.platform}
-                       </span>
-                     </div>
-                     <p className="text-sm text-gray-600 flex items-center mt-1">
-                       <Calendar className="w-4 h-4 mr-2" />
-                       {formatDate(event.start)} - {formatDate(event.end)}
-                     </p>
-                  </div>
-                ))}
-              </div>
-            </div>
-          )}
         </div>
       </div>
       <div className="fb-actions">
