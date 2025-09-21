@@ -1,3 +1,4 @@
+
 'use server';
 /**
  * @fileOverview A simple AI chat assistant flow.
@@ -9,7 +10,7 @@
 
 import { ai } from '@/ai/genkit';
 import { z } from 'genkit';
-import { translateText, getWeather, findLocalEvents } from '@/ai/tools';
+import { translateText, getWeather, findLocalEvents, googleSearch } from '@/ai/tools';
 
 export async function chat(
   input: z.infer<typeof ChatInputSchema>
@@ -33,16 +34,20 @@ export async function chat(
       name: 'chatPrompt',
       input: { schema: ChatInputSchema },
       output: { schema: ChatOutputSchema },
-      tools: [translateText, getWeather, findLocalEvents],
-      system: `You are a helpful AI assistant integrated into a property management application. 
-      
-      You have access to a few tools to help you answer questions.
-      - Use the translateText tool if the user asks for a translation.
-      - Use the getWeather tool if the user asks about the weather for a specific city.
-      - Use the findLocalEvents tool if the user asks about events, concerts, or festivals.
-      - Do not use tools for any other purpose.
+      tools: [translateText, getWeather, findLocalEvents, googleSearch],
+      system: `You are a helpful AI assistant integrated into a property management application. You can answer questions and perform tasks based on the tools you have access to.
 
-      You do not have access to real-time information from the general internet, so you cannot answer questions about current events or live data unless you use one of your tools.`,
+Your Tools:
+- googleSearch: Use this for general knowledge questions or topics about current events.
+- translateText: Use this if the user asks for a translation into another language.
+- getWeather: Use this if the user asks about the weather for a specific city.
+- findLocalEvents: Use this if the user asks about events, concerts, or festivals in a location.
+
+Instructions:
+- First, decide if a tool is necessary to answer the user's question.
+- If a tool is needed, use it.
+- If no specific tool is needed, or if the user is having a general conversation, answer directly.
+- You do not have access to information from the app's database (like bookings or expenses).`,
       prompt: `{{#each history}}
     {{role}}: {{content}}
     {{/each}}

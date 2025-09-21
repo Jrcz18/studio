@@ -6,6 +6,7 @@
  * - translateText: Translates text to a specified language.
  * - getWeather: Fetches the weather for a given city (placeholder).
  * - findLocalEvents: Finds local events near a location (placeholder).
+ * - googleSearch: Performs a Google search and returns results (placeholder).
  */
 
 import { ai } from '@/ai/genkit';
@@ -88,5 +89,30 @@ export const findLocalEvents = ai.defineTool(
     return `Upcoming events near ${input.location}: 
       - OPM Legends Concert at Ayala Triangle on ${formatDate(futureEvent1)}.
       - Makati Street Food Fair at Salcedo Market from ${formatDate(futureEvent2)}.`;
+  }
+);
+
+// 4. Google Search Tool (Placeholder)
+export const googleSearch = ai.defineTool(
+  {
+    name: 'googleSearch',
+    description: 'Performs a Google search for up-to-date information.',
+    inputSchema: z.object({
+      query: z.string().describe('The search query.'),
+    }),
+    outputSchema: z.string().describe('A summary of the search results.'),
+  },
+  async (input) => {
+    console.log(`Performing Google search for: "${input.query}"`);
+    
+    // TODO: Implement a real Google Search API call here.
+    // 1. You can use the Google Custom Search JSON API.
+    // 2. Get an API key from the Google Cloud Console and a Search Engine ID.
+    // 3. Add them to your .env file.
+    // 4. Use `fetch` to call the API.
+    // 5. Parse the response and return a summary of the top results.
+
+    // For now, returning a hardcoded result for demonstration.
+    return `Placeholder Result: According to a recent search, the 2024 Summer Olympics will be held in Paris. Key venues include the Stade de France and Roland-Garros Stadium.`;
   }
 );
