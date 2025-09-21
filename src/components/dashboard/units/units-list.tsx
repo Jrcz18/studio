@@ -1,10 +1,12 @@
 
 'use client';
 
-import { useState, useEffect } from 'react';
-import type { Unit } from '@/lib/types';
-import { formatDate } from '@/lib/utils';
-import { Link as LinkIcon, Copy, Check } from 'lucide-react';
+import { useState } from 'react';
+import type { Unit, Booking } from '@/lib/types';
+import { Link as LinkIcon, Download } from 'lucide-react';
+import { getBookings } from '@/services/bookings';
+import ical from 'ical-generator';
+import { Button } from '@/components/ui/button';
 
 interface UnitsListProps {
   units: Unit[];
@@ -28,14 +30,43 @@ export function UnitsList({ units, onEdit, onDelete }: UnitsListProps) {
 }
 
 function UnitCard({ unit, onEdit, onDelete }: { unit: Unit, onEdit: (unit: Unit) => void, onDelete: (unitId: string) => void }) {
-  const [masterUrlCopied, setMasterUrlCopied] = useState(false);
+  const [isDownloading, setIsDownloading] = useState(false);
 
-  const handleCopyMasterUrl = () => {
-    const url = `https://mpbookingserver.vercel.app/api/ical/${unit.id}`;
-    navigator.clipboard.writeText(url);
-    setMasterUrlCopied(true);
-    setTimeout(() => setMasterUrlCopied(false), 2000);
-  };  
+  const handleDownloadIcal = async () => {
+    setIsDownloading(true);
+    try {
+      const allBookings = await getBookings();
+      const unitBookings = allBookings.filter(b => b.unitId === unit.id);
+      
+      const cal = ical({ name: `${unit.name} Bookings` });
+
+      unitBookings.forEach((booking: Booking) => {
+        cal.createEvent({
+          start: new Date(booking.checkinDate),
+          end: new Date(booking.checkoutDate),
+          summary: `Booking for ${booking.guestFirstName} ${booking.guestLastName}`,
+          description: `Guests: ${booking.adults + booking.children}. Total: ₱${booking.totalAmount}`,
+          organizer: 'Manila Prime Staycation <primestaycation24@gmail.com>',
+        });
+      });
+
+      const blob = new Blob([cal.toString()], { type: 'text/calendar;charset=utf-8' });
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = url;
+      link.setAttribute('download', `${unit.name.replace(/\s+/g, '_')}_calendar.ics`);
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      URL.revokeObjectURL(url);
+
+    } catch (error) {
+      console.error('Failed to generate iCal file:', error);
+      alert('Could not generate calendar file. Please try again.');
+    } finally {
+      setIsDownloading(false);
+    }
+  };
 
   const statusVariant = {
     available: 'bg-green-100 text-green-800',
@@ -70,23 +101,12 @@ function UnitCard({ unit, onEdit, onDelete }: { unit: Unit, onEdit: (unit: Unit)
 
           {/* Master Calendar URL */}
            <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-3 mb-4">
-              <h5 className="font-semibold text-yellow-800 mb-2">Master Calendar URL</h5>
-              <p className="text-xs text-yellow-700 mb-2">Use this link to export your bookings from this app to other platforms like Airbnb or Booking.com.</p>
-              <div className="flex items-center bg-white border rounded-md">
-                <input 
-                  type="text" 
-                  readOnly 
-                  value={`https://mpbookingserver.vercel.app/api/ical/${unit.id}`}
-                  className="p-2 text-sm bg-transparent w-full outline-none"
-                />
-                <button 
-                  onClick={handleCopyMasterUrl}
-                  className="p-2 text-gray-500 hover:text-gray-800"
-                  title="Copy URL"
-                >
-                  {masterUrlCopied ? <Check className="w-5 h-5 text-green-600" /> : <Copy className="w-5 h-5" />}
-                </button>
-              </div>
+              <h5 className="font-semibold text-yellow-800 mb-2">Export Calendar</h5>
+              <p className="text-xs text-yellow-700 mb-3">Download an iCal (.ics) file of all bookings for this unit to import into other calendar platforms.</p>
+              <Button onClick={handleDownloadIcal} disabled={isDownloading} className="w-full prime-button">
+                <Download className="mr-2 h-4 w-4" />
+                {isDownloading ? 'Generating...' : 'Download iCal File'}
+              </Button>
             </div>
 
           <h5 className="font-semibold text-gray-800 mb-2">Import Calendars</h5>
@@ -127,4 +147,3 @@ function UnitCard({ unit, onEdit, onDelete }: { unit: Unit, onEdit: (unit: Unit)
     </div>
   );
 }
-
