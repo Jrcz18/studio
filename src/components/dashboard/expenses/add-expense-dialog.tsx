@@ -22,6 +22,8 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import { Textarea } from '@/components/ui/textarea';
+import { analyzeExpense } from '@/ai/flows/expense-analyzer';
+import { useToast } from '@/hooks/use-toast';
 
 export function AddExpenseDialog({
   children,
@@ -47,6 +49,8 @@ export function AddExpenseDialog({
   const [unitId, setUnitId] = useState<string | null>(null);
   const [description, setDescription] = useState('');
   const [status, setStatus] = useState<Expense['status']>('paid');
+  const [isAnalyzing, setIsAnalyzing] = useState(false);
+  const { toast } = useToast();
 
   useEffect(() => {
     if (open) {
@@ -70,6 +74,31 @@ export function AddExpenseDialog({
       }
     }
   }, [open, expense]);
+
+  const handleDescriptionBlur = async () => {
+    if (!description || amount <= 0) return;
+    setIsAnalyzing(true);
+    try {
+      const result = await analyzeExpense({ description, amount });
+      setCategory(result.category);
+      if (result.isAnomaly) {
+        toast({
+          title: 'Anomaly Detected',
+          description: result.anomalyReason || 'This expense seems unusual.',
+          variant: 'destructive',
+        });
+      }
+    } catch (error) {
+      console.error('Error analyzing expense:', error);
+      toast({
+        title: 'AI Analysis Failed',
+        description: 'Could not categorize expense automatically.',
+        variant: 'destructive',
+      });
+    } finally {
+      setIsAnalyzing(false);
+    }
+  };
 
   const handleSubmit = (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
@@ -118,6 +147,34 @@ export function AddExpenseDialog({
             />
           </div>
           <div className="grid grid-cols-4 items-center gap-4">
+            <Label htmlFor="expenseAmount" className="text-right">
+              Amount (₱)
+            </Label>
+            <Input
+              id="expenseAmount"
+              type="number"
+              min="0"
+              step="0.01"
+              className="col-span-3"
+              value={amount}
+              onChange={(e) => setAmount(parseFloat(e.target.value))}
+              required
+            />
+          </div>
+          <div className="grid grid-cols-4 items-center gap-4">
+            <Label htmlFor="expenseDescription" className="text-right">
+              Description
+            </Label>
+            <Textarea
+              id="expenseDescription"
+              className="col-span-3"
+              placeholder="e.g., Meralco bill for Dec 2024"
+              value={description}
+              onChange={(e) => setDescription(e.target.value)}
+              onBlur={handleDescriptionBlur}
+            />
+          </div>
+          <div className="grid grid-cols-4 items-center gap-4">
             <Label htmlFor="expenseCategory" className="text-right">
               Category
             </Label>
@@ -137,22 +194,9 @@ export function AddExpenseDialog({
                 <SelectItem value="other">Other</SelectItem>
               </SelectContent>
             </Select>
+            {isAnalyzing && <p className="col-span-4 text-center text-sm text-muted-foreground animate-pulse">AI is categorizing...</p>}
           </div>
-          <div className="grid grid-cols-4 items-center gap-4">
-            <Label htmlFor="expenseAmount" className="text-right">
-              Amount (₱)
-            </Label>
-            <Input
-              id="expenseAmount"
-              type="number"
-              min="0"
-              step="0.01"
-              className="col-span-3"
-              value={amount}
-              onChange={(e) => setAmount(parseFloat(e.target.value))}
-              required
-            />
-          </div>
+          
           <div className="grid grid-cols-4 items-center gap-4">
             <Label htmlFor="expenseDate" className="text-right">
               Date
@@ -204,20 +248,8 @@ export function AddExpenseDialog({
               </SelectContent>
             </Select>
           </div>
-          <div className="grid grid-cols-4 items-center gap-4">
-            <Label htmlFor="expenseDescription" className="text-right">
-              Description
-            </Label>
-            <Textarea
-              id="expenseDescription"
-              className="col-span-3"
-              placeholder="Additional details..."
-              value={description}
-              onChange={(e) => setDescription(e.target.value)}
-            />
-          </div>
           <DialogFooter>
-            <Button type="submit">
+            <Button type="submit" disabled={isAnalyzing}>
               {expense ? 'Save Changes' : 'Add Expense'}
             </Button>
           </DialogFooter>
