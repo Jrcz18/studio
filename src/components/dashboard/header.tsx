@@ -17,6 +17,8 @@ import {
 import { Button } from '@/components/ui/button';
 import { formatDate } from '@/lib/utils';
 import { ActivityBookingIcon, ActivityPaymentIcon } from './icons';
+import { findLocalEvents } from '@/ai/tools';
+import { CalendarSearch } from 'lucide-react';
 
 
 const Header = () => {
@@ -24,6 +26,7 @@ const Header = () => {
   const [reminders, setReminders] = useState<Reminder[]>([]);
   const [bookings, setBookings] = useState<Booking[]>([]);
   const [expenses, setExpenses] = useState<Expense[]>([]);
+  const [localEvents, setLocalEvents] = useState<string>('');
   const [isNotificationsOpen, setIsNotificationsOpen] = useState(false);
   const headerRef = useRef<HTMLElement>(null);
   const [headerHeight, setHeaderHeight] = useState(0);
@@ -42,12 +45,16 @@ const Header = () => {
     
     async function fetchData() {
         if(user) {
-            const remindersData = await getReminders();
-            const bookingsData = await getBookings();
-            const expensesData = await getExpenses();
+            const [remindersData, bookingsData, expensesData, eventsData] = await Promise.all([
+              getReminders(),
+              getBookings(),
+              getExpenses(),
+              findLocalEvents({ location: 'Makati' }) // Hardcoded location for now
+            ]);
             setReminders(remindersData);
             setBookings(bookingsData);
             setExpenses(expensesData);
+            setLocalEvents(eventsData);
         }
     }
     fetchData();
@@ -62,7 +69,7 @@ const Header = () => {
     const today = new Date();
     today.setHours(0, 0, 0, 0);
 
-    return reminders.filter(r => {
+    const overdueReminders = reminders.filter(r => {
         if (r.status === 'completed') return false;
         
         const dueDate = new Date(r.dueDate);
@@ -72,7 +79,12 @@ const Header = () => {
 
         return adjustedDueDate <= today;
     }).length;
-  }, [reminders]);
+    
+    const eventCount = localEvents ? 1 : 0;
+    
+    return overdueReminders + eventCount;
+
+  }, [reminders, localEvents]);
 
   const recentActivities = useMemo(() => {
     const bookingActivities = bookings.map(b => ({
@@ -92,11 +104,20 @@ const Header = () => {
       time: e.date,
       color: 'green'
     }));
+
+    const eventActivities = localEvents ? [{
+      type: 'event' as const,
+      icon: CalendarSearch,
+      title: 'Local Events Found',
+      description: localEvents.split('\n')[1].trim().substring(2), // Show first event
+      time: new Date().toISOString(),
+      color: 'orange'
+    }] : [];
   
-    return [...bookingActivities, ...expenseActivities]
+    return [...eventActivities, ...bookingActivities, ...expenseActivities]
       .sort((a, b) => new Date(b.time).getTime() - new Date(a.time).getTime())
       .slice(0, 5);
-  }, [bookings, expenses]);
+  }, [bookings, expenses, localEvents]);
   
 
   return (
@@ -144,8 +165,8 @@ const Header = () => {
                               {recentActivities.length > 0 ? (
                                   recentActivities.map((activity, index) => (
                                       <div key={index} className="flex items-start space-x-3 p-2">
-                                          <div className={`w-8 h-8 rounded-full flex items-center justify-center flex-shrink-0 ${activity.color === 'blue' ? 'bg-blue-100' : 'bg-green-100'}`}>
-                                              <activity.icon className={`w-4 h-4 ${activity.color === 'blue' ? 'text-blue-600' : 'text-green-600'}`} />
+                                          <div className={`w-8 h-8 rounded-full flex items-center justify-center flex-shrink-0 bg-${activity.color}-100`}>
+                                              <activity.icon className={`w-4 h-4 text-${activity.color}-600`} />
                                           </div>
                                           <div className="flex-1">
                                               <p className="text-sm font-medium text-gray-900">{activity.title}</p>

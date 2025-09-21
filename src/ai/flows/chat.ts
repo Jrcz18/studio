@@ -11,23 +11,23 @@ import { ai } from '@/ai/genkit';
 import { z } from 'genkit';
 import { translateText, getWeather, findLocalEvents } from '@/ai/tools';
 
-const MessageSchema = z.object({
-  role: z.enum(['user', 'model', 'tool']),
-  content: z.string(),
-});
+export async function chat(
+  input: z.infer<typeof ChatInputSchema>
+): Promise<z.infer<typeof ChatOutputSchema>> {
+  const MessageSchema = z.object({
+    role: z.enum(['user', 'model', 'tool']),
+    content: z.string(),
+  });
 
-const ChatInputSchema = z.object({
-  history: z.array(MessageSchema).describe('The conversation history.'),
-  prompt: z.string().describe("The user's latest message."),
-});
-export type ChatInput = z.infer<typeof ChatInputSchema>;
+  const ChatInputSchema = z.object({
+    history: z.array(MessageSchema).describe('The conversation history.'),
+    prompt: z.string().describe("The user's latest message."),
+  });
 
-const ChatOutputSchema = z.object({
-  response: z.string().describe("The AI's response."),
-});
-export type ChatOutput = z.infer<typeof ChatOutputSchema>;
+  const ChatOutputSchema = z.object({
+    response: z.string().describe("The AI's response."),
+  });
 
-export async function chat(input: ChatInput): Promise<ChatOutput> {
   const chatPrompt = ai.definePrompt(
     {
       name: 'chatPrompt',
