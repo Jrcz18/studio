@@ -203,7 +203,6 @@ export function AddBookingDialog({
                 required
                 value={checkinDate}
                 onChange={(e) => setCheckinDate(e.target.value)}
-                min={new Date().toISOString().split('T')[0]}
               />
             </div>
             <div>
