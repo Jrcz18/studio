@@ -5,3 +5,4 @@ config();
 
 import '@/ai/flows/booking-summary-and-pricing.ts';
 import '@/ai/flows/report-summary.ts';
+import '@/ai/flows/send-admin-notification.ts';

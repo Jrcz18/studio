@@ -12,6 +12,8 @@ import { getBookings, addBooking as addBookingService, updateBooking as updateBo
 import { getUnits } from '@/services/units';
 import { useUIContext } from '@/hooks/use-ui-context';
 import { getAgents } from '@/services/agents';
+import { sendAdminBookingNotification } from '@/ai/flows/send-admin-notification';
+import { useToast } from '@/hooks/use-toast';
 
 
 export default function BookingsPage() {
@@ -28,6 +30,7 @@ export default function BookingsPage() {
   const [loading, setLoading] = useState(true);
   const [selectedBooking, setSelectedBooking] = React.useState<Booking | null>(null);
   const searchParams = useSearchParams();
+  const { toast } = useToast();
 
   useEffect(() => {
     async function fetchData() {
@@ -61,7 +64,34 @@ export default function BookingsPage() {
       createdAt: new Date().toISOString(),
     };
     const id = await addBookingService(newBooking);
-    setBookings((prev) => [...prev, { ...newBooking, id }]);
+    const fullBooking = { ...newBooking, id };
+    setBookings((prev) => [...prev, fullBooking]);
+
+    // Send admin notification
+    try {
+      const unit = units.find(u => u.id === fullBooking.unitId);
+      if (unit) {
+        await sendAdminBookingNotification({
+          guestName: `${fullBooking.guestFirstName} ${fullBooking.guestLastName}`,
+          guestContact: fullBooking.guestPhone,
+          numberOfGuests: fullBooking.adults + fullBooking.children,
+          checkinDate: fullBooking.checkinDate,
+          checkoutDate: fullBooking.checkoutDate,
+          unitName: unit.name,
+        });
+        toast({
+          title: 'Admin Notified',
+          description: 'An email has been sent to the building admin.',
+        });
+      }
+    } catch (error) {
+      console.error('Failed to send admin notification:', error);
+       toast({
+          title: 'Notification Failed',
+          description: 'Could not send email to the building admin.',
+          variant: 'destructive',
+       });
+    }
   };
 
   const updateBooking = async (updatedBooking: Booking) => {
