@@ -48,7 +48,7 @@ export function AgentsList({ agents, onEdit, onDelete }: AgentsListProps) {
               <div>
                 <p>
                   <strong>Commission:</strong>{' '}
-                  {agent.commissionType === 'fixed_markup'
+                  {agent.commissionType === 'fixed_commission'
                     ? `Surplus over unit rate`
                     : `${agent.commissionRate}% of revenue`}
                 </p>

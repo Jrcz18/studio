@@ -152,7 +152,7 @@ export default function ReportsPage() {
         let totalCommission = 0;
         let reportData: any = {};
 
-        if (agent.commissionType === 'fixed_markup') {
+        if (agent.commissionType === 'fixed_commission') {
             totalCommission = agentBookings.reduce((sum, booking) => {
                 const unit = units.find(u => u.id === booking.unitId);
                 if (unit) {

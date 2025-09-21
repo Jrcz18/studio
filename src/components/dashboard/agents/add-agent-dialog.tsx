@@ -158,7 +158,7 @@ export function AddAgentDialog({
               </SelectTrigger>
               <SelectContent>
                 <SelectItem value="percentage">Percentage</SelectItem>
-                <SelectItem value="fixed_markup">Fixed Markup</SelectItem>
+                <SelectItem value="fixed_commission">Fixed Commission</SelectItem>
               </SelectContent>
             </Select>
           </div>
