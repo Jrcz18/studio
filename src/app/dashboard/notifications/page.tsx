@@ -11,6 +11,14 @@ import { formatDate } from '@/lib/utils';
 import { useRouter } from 'next/navigation';
 import { cn } from '@/lib/utils';
 import { useToast } from '@/hooks/use-toast';
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+} from '@/components/ui/dialog';
+import NotificationDetailClient from '@/components/dashboard/notifications/notification-detail-client';
+
 
 const iconMap: Record<AppNotification['type'], React.ReactNode> = {
     booking: <Calendar className="w-5 h-5 text-blue-500" />,
@@ -26,6 +34,8 @@ export default function NotificationsPage() {
     const [notifications, setNotifications] = useState<AppNotification[]>([]);
     const [loading, setLoading] = useState(true);
     const { toast } = useToast();
+    const [selectedNotification, setSelectedNotification] = useState<AppNotification | null>(null);
+    const [isDetailOpen, setIsDetailOpen] = useState(false);
 
     const fetchNotifications = useCallback(async () => {
         if (user) {
@@ -40,16 +50,15 @@ export default function NotificationsPage() {
 
     useEffect(() => {
         fetchNotifications();
-    }, [user]); // Removed fetchNotifications from dependency array
+    }, [fetchNotifications, user]);
 
     const handleNotificationClick = async (notification: AppNotification) => {
         if (!notification.isRead) {
+            await markNotificationAsRead(notification.id!);
             setNotifications(prev => prev.map(n => n.id === notification.id ? { ...n, isRead: true } : n));
-             await markNotificationAsRead(notification.id!);
         }
-        if (notification.link) {
-            router.push(notification.link);
-        }
+        setSelectedNotification(notification);
+        setIsDetailOpen(true);
     };
     
     const handleMarkAllAsRead = async () => {
@@ -60,9 +69,8 @@ export default function NotificationsPage() {
     };
 
     const handleDeleteNotification = async (e: React.MouseEvent, notificationId: string) => {
-        e.stopPropagation(); // Prevent card's onClick from firing
+        e.stopPropagation(); 
 
-        // Optimistically remove from UI
         setNotifications(prev => prev.filter(n => n.id !== notificationId));
         
         try {
@@ -72,7 +80,6 @@ export default function NotificationsPage() {
             });
         } catch (error) {
             console.error("Failed to delete notification:", error);
-            // Revert UI change if API call fails
             fetchNotifications(); 
             toast({
                 title: "Error",
@@ -142,6 +149,16 @@ export default function NotificationsPage() {
                     </div>
                 )}
             </div>
+            {selectedNotification && (
+                <Dialog open={isDetailOpen} onOpenChange={setIsDetailOpen}>
+                    <DialogContent>
+                        <DialogHeader>
+                            <DialogTitle>Notification Details</DialogTitle>
+                        </DialogHeader>
+                        <NotificationDetailClient notification={selectedNotification} />
+                    </DialogContent>
+                </Dialog>
+            )}
         </div>
     );
 }
