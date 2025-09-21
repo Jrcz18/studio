@@ -1,3 +1,4 @@
+
 'use client';
 
 import React, { useEffect, useState } from 'react';
@@ -6,10 +7,11 @@ import { Button } from '@/components/ui/button';
 import { BookingsList } from '@/components/dashboard/bookings/bookings-list';
 import { AddBookingDialog } from '@/components/dashboard/bookings/add-booking-dialog';
 import { EditBookingDialog } from '@/components/dashboard/bookings/edit-booking-dialog';
-import type { Booking, Unit } from '@/lib/types';
+import type { Agent, Booking, Unit } from '@/lib/types';
 import { getBookings, addBooking as addBookingService, updateBooking as updateBookingService, deleteBooking as deleteBookingService } from '@/services/bookings';
 import { getUnits } from '@/services/units';
 import { useUIContext } from '@/hooks/use-ui-context';
+import { getAgents } from '@/services/agents';
 
 
 export default function BookingsPage() {
@@ -22,16 +24,21 @@ export default function BookingsPage() {
 
   const [bookings, setBookings] = React.useState<Booking[]>([]);
   const [units, setUnits] = useState<Unit[]>([]);
+  const [agents, setAgents] = useState<Agent[]>([]);
   const [loading, setLoading] = useState(true);
   const [selectedBooking, setSelectedBooking] = React.useState<Booking | null>(null);
   const searchParams = useSearchParams();
 
   useEffect(() => {
     async function fetchData() {
-        const bookingsData = await getBookings();
-        const unitsData = await getUnits();
+        const [bookingsData, unitsData, agentsData] = await Promise.all([
+          getBookings(),
+          getUnits(),
+          getAgents()
+        ]);
         setBookings(bookingsData);
         setUnits(unitsData);
+        setAgents(agentsData);
         setLoading(false);
     }
     fetchData();
@@ -89,6 +96,7 @@ export default function BookingsPage() {
           onOpenChange={setIsAddBookingOpen}
           onAddBooking={addBooking}
           units={units}
+          agents={agents}
         >
           <button
             onClick={() => setIsAddBookingOpen(true)}

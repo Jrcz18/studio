@@ -26,6 +26,7 @@ export type Booking = {
   guestPhone: string;
   guestEmail: string;
   unitId: string;
+  agentId?: string;
   checkinDate: string;
   checkoutDate: string;
   adults: number;

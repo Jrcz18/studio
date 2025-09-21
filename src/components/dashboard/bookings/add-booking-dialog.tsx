@@ -1,7 +1,7 @@
 
 'use client';
 
-import type { Booking, Unit } from '@/lib/types';
+import type { Agent, Booking, Unit } from '@/lib/types';
 import { useState, useEffect } from 'react';
 import {
   Dialog,
@@ -29,12 +29,14 @@ export function AddBookingDialog({
   onOpenChange,
   onAddBooking,
   units,
+  agents,
 }: {
   children?: React.ReactNode;
   open: boolean;
   onOpenChange: (open: boolean) => void;
   onAddBooking: (booking: Omit<Booking, 'id' | 'createdAt'>) => void;
   units: Unit[];
+  agents: Agent[];
 }) {
   const [nightlyRate, setNightlyRate] = useState(0);
   const [totalAmount, setTotalAmount] = useState(0);
@@ -103,12 +105,14 @@ export function AddBookingDialog({
   const handleSubmit = (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     const formData = new FormData(e.currentTarget);
+    const agentId = formData.get('agentId') as string;
     const newBooking = {
       guestFirstName: formData.get('guestFirstName') as string,
       guestLastName: formData.get('guestLastName') as string,
       guestPhone: formData.get('guestPhone') as string,
       guestEmail: formData.get('guestEmail') as string,
       unitId: formData.get('bookingUnit') as string,
+      agentId: agentId === 'none' ? undefined : agentId,
       checkinDate: formData.get('checkinDate') as string,
       checkoutDate: formData.get('checkoutDate') as string,
       adults: adults,
@@ -168,6 +172,22 @@ export function AddBookingDialog({
                 {units.map((unit) => (
                   <SelectItem key={unit.id} value={unit.id!}>
                     {unit.name} - ₱{unit.rate}/night
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+           <div>
+            <Label htmlFor="agentId">Agent (Optional)</Label>
+            <Select name="agentId">
+              <SelectTrigger id="agentId">
+                <SelectValue placeholder="Select an agent" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="none">No Agent</SelectItem>
+                {agents.map((agent) => (
+                  <SelectItem key={agent.id} value={agent.id!}>
+                    {agent.name}
                   </SelectItem>
                 ))}
               </SelectContent>
