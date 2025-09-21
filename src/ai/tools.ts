@@ -92,7 +92,7 @@ export const findLocalEvents = ai.defineTool(
   }
 );
 
-// 4. Google Search Tool (Placeholder)
+// 4. Google Search Tool (Functional)
 export const googleSearch = ai.defineTool(
   {
     name: 'googleSearch',
@@ -105,14 +105,39 @@ export const googleSearch = ai.defineTool(
   async (input) => {
     console.log(`Performing Google search for: "${input.query}"`);
     
-    // TODO: Implement a real Google Search API call here.
-    // 1. You can use the Google Custom Search JSON API.
-    // 2. Get an API key from the Google Cloud Console and a Search Engine ID.
-    // 3. Add them to your .env file.
-    // 4. Use `fetch` to call the API.
-    // 5. Parse the response and return a summary of the top results.
+    const apiKey = process.env.GOOGLE_CUSTOM_SEARCH_API_KEY;
+    const searchEngineId = process.env.GOOGLE_CUSTOM_SEARCH_ENGINE_ID;
 
-    // For now, returning a hardcoded result for demonstration.
-    return `Placeholder Result: According to a recent search, the 2024 Summer Olympics will be held in Paris. Key venues include the Stade de France and Roland-Garros Stadium.`;
+    if (!apiKey || !searchEngineId) {
+      console.error("Google Search API Key or Search Engine ID is not configured.");
+      return "Search is not configured. Please provide the necessary API keys.";
+    }
+
+    const url = `https://www.googleapis.com/customsearch/v1?key=${apiKey}&cx=${searchEngineId}&q=${encodeURIComponent(input.query)}`;
+
+    try {
+      const response = await fetch(url);
+      if (!response.ok) {
+        const error = await response.json();
+        console.error("Google Search API Error:", error);
+        return `Sorry, the search failed: ${error.error.message}`;
+      }
+      const data = await response.json();
+      
+      if (!data.items || data.items.length === 0) {
+        return "No relevant results found.";
+      }
+
+      // Summarize the top 3 results
+      const summary = data.items.slice(0, 3).map((item: any, index: number) => 
+        `${index + 1}. ${item.title}: ${item.snippet}`
+      ).join('\n');
+      
+      return `Here's a summary of the top search results:\n${summary}`;
+
+    } catch (error) {
+      console.error("Failed to execute Google Search:", error);
+      return "Sorry, I was unable to perform the search at this time.";
+    }
   }
 );
