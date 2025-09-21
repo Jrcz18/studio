@@ -33,7 +33,7 @@ export async function detectBookingConflict(input: DetectBookingConflictInput): 
 const prompt = ai.definePrompt({
   name: 'detectBookingConflictPrompt',
   input: {schema: DetectBookingConflictInputSchema},
-  output: {schema: DetectBookingConflictOutputSchema},
+  output: {schema: DetectBookingConflictInputSchema},
   prompt: `You are an AI assistant designed to detect booking conflicts between two calendars for a rental unit.
 
 You are given two sets of calendar events in iCal format, and the name of the rental unit.
