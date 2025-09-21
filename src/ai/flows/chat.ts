@@ -33,6 +33,7 @@ export async function chat(input: ChatInput): Promise<ChatOutput> {
       input: { schema: ChatInputSchema },
       output: { schema: ChatOutputSchema },
       prompt: `You are a helpful AI assistant integrated into a property management application. Answer the user's questions.
+      You do not have access to real-time information from the internet, so you cannot answer questions about current events, weather, or live data.
 
     {{#each history}}
     {{role}}: {{content}}
