@@ -149,7 +149,14 @@ export default function ReportsPage() {
         });
 
         const totalRevenueGenerated = agentBookings.reduce((sum, b) => sum + b.totalAmount, 0);
-        const totalCommission = (totalRevenueGenerated * agent.commissionRate) / 100;
+        
+        let totalCommission = 0;
+        if (agent.commissionType === 'fixed_markup') {
+            totalCommission = agentBookings.length * agent.commissionMarkup;
+        } else { // Default to percentage
+            totalCommission = (totalRevenueGenerated * agent.commissionRate) / 100;
+        }
+
 
         setGeneratedAgentReport({
             agent,
@@ -313,8 +320,7 @@ export default function ReportsPage() {
                         <SelectTrigger><SelectValue placeholder="Select Year" /></SelectTrigger>
                         <SelectContent>
                             {years.map(year => (
-                                <SelectItem key={year} value={String(year)}>{year}</SelectItem>
-                            ))}
+                                <SelectItem key={year} value={String(year)}>{year}</SelectItem>                            ))}
                         </SelectContent>
                     </Select>
                     <Button onClick={handleGenerateInvestorReport} className="prime-button w-full" disabled={generatingInvestorReport || !selectedInvestorId}>

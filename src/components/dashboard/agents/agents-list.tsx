@@ -1,3 +1,4 @@
+
 'use client';
 
 import type { Agent } from '@/lib/types';
@@ -10,18 +11,21 @@ interface AgentsListProps {
 }
 
 export function AgentsList({ agents, onEdit, onDelete }: AgentsListProps) {
-
   if (agents.length === 0) {
-    return <p className="text-gray-500 text-center py-8">No agents found. Click "+ Add" to create one.</p>;
+    return (
+      <p className="text-gray-500 text-center py-8">
+        No agents found. Click "+ Add" to create one.
+      </p>
+    );
   }
 
   return (
     <div className="space-y-4">
       {agents.map((agent) => (
         <div key={agent.id} className="fb-card">
-          <div className='fb-header'>
+          <div className="fb-header">
             <div className="flex items-center">
-              <div className='fb-avatar'>
+              <div className="fb-avatar">
                 <span>{agent.name.charAt(0)}</span>
               </div>
               <div>
@@ -39,11 +43,14 @@ export function AgentsList({ agents, onEdit, onDelete }: AgentsListProps) {
               {agent.status.charAt(0).toUpperCase() + agent.status.slice(1)}
             </span>
           </div>
-          <div className='fb-content'>
+          <div className="fb-content">
             <div className="grid grid-cols-2 gap-4 text-sm text-gray-600 mb-3">
               <div>
                 <p>
-                  <strong>Commission Rate:</strong> {agent.commissionRate}%
+                  <strong>Commission:</strong>{' '}
+                  {agent.commissionType === 'fixed_markup'
+                    ? `₱${agent.commissionMarkup.toLocaleString()} per booking`
+                    : `${agent.commissionRate}% of revenue`}
                 </p>
                 <p>
                   <strong>Total Bookings:</strong> {agent.totalBookings}

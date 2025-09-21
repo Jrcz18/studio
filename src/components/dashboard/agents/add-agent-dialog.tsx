@@ -14,6 +14,13 @@ import {
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
 
 export function AddAgentDialog({
   children,
@@ -27,13 +34,21 @@ export function AddAgentDialog({
   open: boolean;
   onOpenChange: (open: boolean) => void;
   agent?: Agent | null;
-  onAddAgent: (data: Omit<Agent, 'id' | 'totalBookings' | 'totalCommissions' | 'status'>) => void;
+  onAddAgent: (
+    data: Omit<
+      Agent,
+      'id' | 'totalBookings' | 'totalCommissions' | 'status'
+    >
+  ) => void;
   onUpdateAgent: (agent: Agent) => void;
 }) {
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
   const [phone, setPhone] = useState('');
+  const [commissionType, setCommissionType] =
+    useState<Agent['commissionType']>('percentage');
   const [commissionRate, setCommissionRate] = useState(0);
+  const [commissionMarkup, setCommissionMarkup] = useState(0);
   const [joinDate, setJoinDate] = useState('');
 
   useEffect(() => {
@@ -42,14 +57,18 @@ export function AddAgentDialog({
         setName(agent.name);
         setEmail(agent.email);
         setPhone(agent.phone);
-        setCommissionRate(agent.commissionRate);
+        setCommissionType(agent.commissionType || 'percentage');
+        setCommissionRate(agent.commissionRate || 0);
+        setCommissionMarkup(agent.commissionMarkup || 0);
         setJoinDate(agent.joinDate);
       } else {
         // Reset form for new agent
         setName('');
         setEmail('');
         setPhone('');
+        setCommissionType('percentage');
         setCommissionRate(0);
+        setCommissionMarkup(0);
         setJoinDate(new Date().toISOString().split('T')[0]);
       }
     }
@@ -57,23 +76,23 @@ export function AddAgentDialog({
 
   const handleSubmit = (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
+    const agentData = {
+      name,
+      email,
+      phone,
+      commissionType,
+      commissionRate,
+      commissionMarkup,
+      joinDate,
+    };
+
     if (agent) {
       onUpdateAgent({
         ...agent,
-        name,
-        email,
-        phone,
-        commissionRate,
-        joinDate,
+        ...agentData,
       });
     } else {
-      onAddAgent({
-        name,
-        email,
-        phone,
-        commissionRate,
-        joinDate,
-      });
+      onAddAgent(agentData);
     }
     onOpenChange(false);
   };
@@ -125,21 +144,61 @@ export function AddAgentDialog({
             />
           </div>
           <div className="grid grid-cols-4 items-center gap-4">
-            <Label htmlFor="agentCommission" className="text-right">
-              Commission (%)
+            <Label htmlFor="commissionType" className="text-right">
+              Commission Type
             </Label>
-            <Input
-              id="agentCommission"
-              type="number"
-              min="0"
-              max="100"
-              step="1"
-              className="col-span-3"
-              value={commissionRate}
-              onChange={(e) => setCommissionRate(parseFloat(e.target.value))}
-              required
-            />
+            <Select
+              value={commissionType}
+              onValueChange={(v) =>
+                setCommissionType(v as Agent['commissionType'])
+              }
+            >
+              <SelectTrigger className="col-span-3">
+                <SelectValue placeholder="Select Type" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="percentage">Percentage</SelectItem>
+                <SelectItem value="fixed_markup">Fixed Markup</SelectItem>
+              </SelectContent>
+            </Select>
           </div>
+
+          {commissionType === 'percentage' ? (
+            <div className="grid grid-cols-4 items-center gap-4">
+              <Label htmlFor="agentCommission" className="text-right">
+                Rate (%)
+              </Label>
+              <Input
+                id="agentCommission"
+                type="number"
+                min="0"
+                max="100"
+                step="1"
+                className="col-span-3"
+                value={commissionRate}
+                onChange={(e) => setCommissionRate(parseFloat(e.target.value))}
+                required
+              />
+            </div>
+          ) : (
+            <div className="grid grid-cols-4 items-center gap-4">
+              <Label htmlFor="agentMarkup" className="text-right">
+                Markup (₱)
+              </Label>
+              <Input
+                id="agentMarkup"
+                type="number"
+                min="0"
+                step="50"
+                className="col-span-3"
+                value={commissionMarkup}
+                onChange={(e) =>
+                  setCommissionMarkup(parseFloat(e.target.value))
+                }
+                required
+              />
+            </div>
+          )}
           <div className="grid grid-cols-4 items-center gap-4">
             <Label htmlFor="agentJoinDate" className="text-right">
               Join Date
@@ -154,7 +213,9 @@ export function AddAgentDialog({
             />
           </div>
           <DialogFooter>
-            <Button type="submit">{agent ? 'Save Changes' : 'Add Agent'}</Button>
+            <Button type="submit">
+              {agent ? 'Save Changes' : 'Add Agent'}
+            </Button>
           </DialogFooter>
         </form>
       </DialogContent>

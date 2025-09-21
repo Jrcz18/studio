@@ -2,6 +2,7 @@
 
 
 
+
 export type Unit = {
   id?: string;
   name: string;
@@ -71,7 +72,9 @@ export type Agent = {
     name: string;
     email: string;
     phone: string;
-    commissionRate: number;
+    commissionType: 'percentage' | 'fixed_markup';
+    commissionRate: number; // For percentage
+    commissionMarkup: number; // For fixed markup
     totalBookings: number;
     totalCommissions: number;
     joinDate: string;
