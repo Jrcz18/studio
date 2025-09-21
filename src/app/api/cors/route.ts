@@ -1,7 +1,6 @@
 
 import { NextResponse } from 'next/server';
 import Cors from 'cors';
-import { syncCalendars as syncCalendarsAction } from '@/app/actions/sync-calendars';
 import { sendDiscordNotification } from '@/services/discord';
 
 // Initialize the cors middleware
@@ -50,8 +49,8 @@ export async function POST(request: Request) {
 
     // Route the request based on the action
     switch (action) {
-      case 'sync':
-        // The 'sync' action from mobile now needs to call the serverless function directly.
+      case 'sync-calendars':
+        // The 'sync-calendars' action from mobile now needs to call the serverless function directly.
         // We re-route it through the /api/sync endpoint.
         const syncResponse = await fetch(`${request.nextUrl.origin}/api/sync`, {
             method: 'POST',

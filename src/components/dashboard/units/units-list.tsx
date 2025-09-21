@@ -3,9 +3,9 @@
 
 import { useState, useEffect } from 'react';
 import type { Unit, SyncedEvent, Platform } from '@/lib/types';
-import { syncCalendars } from '@/app/actions/sync-calendars';
 import { formatDate } from '@/lib/utils';
 import { Calendar, Link as LinkIcon, List, Copy, Check } from 'lucide-react';
+import { callApi } from '@/services/utils';
 
 interface UnitsListProps {
   units: Unit[];
@@ -43,7 +43,7 @@ function UnitCard({ unit, onEdit, onDelete }: { unit: Unit, onEdit: (unit: Unit)
     }
     
     handleSync(true); // Auto-sync on component mount silently
-  }, []);
+  }, [unit.id]); // Re-run if unit ID changes
 
 
   const statusVariant = {
@@ -76,15 +76,18 @@ function UnitCard({ unit, onEdit, onDelete }: { unit: Unit, onEdit: (unit: Unit)
         setLoading(false);
         return;
       }
-      const result = await syncCalendars(unit.calendars, unit.id);
+      
+      const result = await callApi('sync-calendars', { unitCalendars: unit.calendars, unitId: unit.id });
       setEvents(result);
+
       if (result.length === 0 && !isAutoSync) {
-        setError('No events found in the provided calendars. The URLs might be incorrect, empty, or placeholder examples.');
+        setError('No new events found in the provided calendars. The URLs might be incorrect, empty, or placeholder examples.');
       }
     } catch (e) {
       console.error('Syncing failed:', e);
        if (!isAutoSync) {
-        setError('An error occurred while syncing calendars. Please check the console for details.');
+        const message = e instanceof Error ? e.message : 'An unknown error occurred.';
+        setError(`An error occurred while syncing: ${message}`);
        }
     } finally {
       setLoading(false);
@@ -227,4 +230,3 @@ function UnitCard({ unit, onEdit, onDelete }: { unit: Unit, onEdit: (unit: Unit)
     </div>
   );
 }
-

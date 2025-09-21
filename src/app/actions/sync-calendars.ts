@@ -6,7 +6,7 @@ import { collection, addDoc, getDocs, query, where } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
 import { getUnit } from '@/services/units';
 import { CalendarService } from '@/services/calendar';
-import { callApi }from '@/services/utils';
+import { sendDiscordNotification } from '@/services/discord';
 
 async function getExistingBookingUIDs(unitId: string, uidsToFetch: string[]): Promise<string[]> {
     if (uidsToFetch.length === 0) {
@@ -63,14 +63,9 @@ async function createBookingFromEvent(event: SyncedEvent, unit: Unit): Promise<v
         ...newBookingData,
         createdAt: new Date().toISOString()
     });
-
-    try {
-        // The discord notification is also handled by the backend
-        // This is a fire-and-forget call. We check for a function that only exists on the server.
-        await callApi('discord-notification', { booking: { ...newBookingData, id: docRef.id, createdAt: new Date().toISOString() }, unit });
-    } catch(error) {
-        console.error("Failed to send Discord notification for synced event:", error);
-    }
+    
+    // The Discord notification is handled by the Vercel backend.
+    await sendDiscordNotification({ ...newBookingData, id: docRef.id, createdAt: new Date().toISOString() }, unit);
 }
 
 
