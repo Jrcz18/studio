@@ -3,8 +3,43 @@
 
 import { formatDate } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
+import { generateReportSummary, ReportSummaryInput } from '@/ai/flows/report-summary';
+import { useEffect, useState } from 'react';
 
 export function ReportView({ report }: { report: any }) {
+  const [summary, setSummary] = useState('');
+  const [loadingSummary, setLoadingSummary] = useState(false);
+
+  useEffect(() => {
+    if (report) {
+      handleGenerateSummary();
+    }
+  }, [report]);
+
+  const handleGenerateSummary = async () => {
+    if (!report) return;
+    setLoadingSummary(true);
+    setSummary('');
+
+    try {
+      const input: ReportSummaryInput = {
+        unitName: report.unit.name,
+        month: report.month,
+        year: report.year,
+        totalRevenue: report.totalRevenue,
+        totalExpenses: report.totalExpenses,
+        netProfit: report.netProfit,
+      };
+      const result = await generateReportSummary(input);
+      setSummary(result.summary);
+    } catch (error) {
+      console.error('Error generating AI summary:', error);
+      setSummary('Could not generate AI summary at this time.');
+    } finally {
+      setLoadingSummary(false);
+    }
+  };
+
   if (!report) return null;
 
   const handlePrint = () => {
@@ -33,6 +68,19 @@ export function ReportView({ report }: { report: any }) {
                 <h2 className="text-2xl font-bold text-gray-800">Monthly Performance Report</h2>
                 <p className="text-lg font-semibold text-gray-600">{report.unit.name}</p>
                 <p className="text-md text-gray-500">{report.month} {report.year}</p>
+            </div>
+
+             {/* AI Summary */}
+            <div className="mb-6 bg-blue-50 border border-blue-200 rounded-lg p-4">
+              <h3 className="text-lg font-semibold text-blue-800 mb-2 flex items-center">
+                <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="mr-2"><path d="M12 3c7.2 0 9 1.8 9 9s-1.8 9-9 9-9-1.8-9-9 1.8-9 9-9z"/><path d="M9 9h6v6H9z"/><path d="M9 3v6"/><path d="M15 3v6"/></svg>
+                AI-Powered Summary
+              </h3>
+              {loadingSummary ? (
+                <p className="text-sm text-blue-700 animate-pulse">Generating insights...</p>
+              ) : (
+                <p className="text-sm text-blue-700">{summary}</p>
+              )}
             </div>
 
             {/* Summary */}

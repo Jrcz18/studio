@@ -31,6 +31,7 @@ export default function ReportsPage() {
     const [selectedMonth, setSelectedMonth] = useState<string>(String(new Date().getMonth()));
     const [selectedYear, setSelectedYear] = useState<string>(String(new Date().getFullYear()));
     
+    const [generating, setGenerating] = useState(false);
     const [generatedReport, setGeneratedReport] = useState<any>(null);
 
     useEffect(() => {
@@ -52,6 +53,7 @@ export default function ReportsPage() {
     }, []);
 
     const handleGenerateReport = () => {
+        setGenerating(true);
         const year = parseInt(selectedYear);
         const month = parseInt(selectedMonth);
 
@@ -97,6 +99,7 @@ export default function ReportsPage() {
             investor,
             investorShare
         });
+        setGenerating(false);
     };
 
     const overallStats = {
@@ -169,7 +172,9 @@ export default function ReportsPage() {
                     ))}
                 </SelectContent>
             </Select>
-            <Button onClick={handleGenerateReport} className="prime-button w-full">Generate</Button>
+            <Button onClick={handleGenerateReport} className="prime-button w-full" disabled={generating}>
+              {generating ? 'Generating...' : 'Generate'}
+            </Button>
         </div>
       </div>
 
