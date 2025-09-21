@@ -25,21 +25,20 @@ export default function NotificationsPage() {
     const [notifications, setNotifications] = useState<AppNotification[]>([]);
     const [loading, setLoading] = useState(true);
 
-    useEffect(() => {
-        const fetchNotifications = async () => {
-            if (user) {
-                setLoading(true);
-                const data = await getAllNotifications(user.uid);
-                setNotifications(data);
-                setLoading(false);
-            } else {
-                // If there's no user, we are not loading.
-                setLoading(false);
-            }
-        };
-
-        fetchNotifications();
+    const fetchNotifications = useCallback(async () => {
+        if (user) {
+            setLoading(true);
+            const data = await getAllNotifications(user.uid);
+            setNotifications(data);
+            setLoading(false);
+        } else {
+            setLoading(false);
+        }
     }, [user]);
+
+    useEffect(() => {
+        fetchNotifications();
+    }, [fetchNotifications]);
 
     const handleNotificationClick = async (notification: AppNotification) => {
         if (!notification.isRead) {
