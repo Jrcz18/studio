@@ -3,9 +3,9 @@
 
 import { db } from '@/lib/firebase';
 import { collection, getDocs, addDoc, deleteDoc, doc, updateDoc } from 'firebase/firestore';
-import type { Booking, Unit } from '@/lib/types';
+import type { Booking } from '@/lib/types';
 import { getUnit } from './units';
-import { callApi } from './utils';
+import { sendDiscordNotification } from './discord';
 
 
 const bookingsCollection = collection(db, 'bookings');
@@ -18,16 +18,13 @@ export async function getBookings(): Promise<Booking[]> {
 export async function addBooking(bookingData: Omit<Booking, 'id'>): Promise<string> {
     const docRef = await addDoc(bookingsCollection, bookingData);
     
-    // After successful booking, send a notification via the Vercel backend
     try {
         const unit = await getUnit(bookingData.unitId);
         if (unit) {
-            // This is a fire-and-forget call to the backend.
-            await callApi('discord-notification', { booking: { ...bookingData, id: docRef.id, createdAt: new Date().toISOString() }, unit });
+            await sendDiscordNotification({ ...bookingData, id: docRef.id, createdAt: new Date().toISOString() }, unit);
         }
     } catch (error) {
-        console.error("Failed to send Discord notification via backend:", error);
-        // We don't re-throw the error because the booking itself was successful.
+        console.error("Failed to send Discord notification:", error);
     }
 
     return docRef.id;

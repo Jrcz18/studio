@@ -1,10 +1,9 @@
+
 'use server';
 
 import type { Booking, Unit } from "@/lib/types";
 
 export async function sendDiscordNotification(booking: Booking, unit: Unit) {
-    // This function will be executed on the Vercel backend.
-    // It reads the webhook URL from environment variables on the server.
     const webhookUrl = process.env.DISCORD_WEBHOOK_URL;
 
     if (!webhookUrl) {
@@ -44,6 +43,8 @@ export async function sendDiscordNotification(booking: Booking, unit: Unit) {
         if (!response.ok) {
             const errorBody = await response.text();
             console.error(`Discord notification failed: ${response.statusText}`, errorBody);
+        } else {
+            console.log('Discord notification sent successfully.');
         }
     } catch (error) {
         console.error("Error sending Discord notification:", error);
