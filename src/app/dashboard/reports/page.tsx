@@ -111,7 +111,7 @@ export default function ReportsPage() {
         const performance = getMonthlyPerformance(unitIdsToReport, year, month);
 
         const unit = units.find(u => u.id === selectedUnitId);
-        const investor = unit ? investors.find(i => i.unitIds.includes(unit.id!)) : null;
+        const investor = unit ? investors.find(i => i.unitIds && i.unitIds.includes(unit.id!)) : null;
         
         let investorShare = 0;
         if (investor && performance.netProfit > 0) {
