@@ -12,6 +12,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Button } from "@/components/ui/button";
 import { ReportView } from "@/components/dashboard/reports/report-view";
 import { AgentReportView } from "@/components/dashboard/reports/agent-report-view";
+import { InvestorReportView } from "@/components/dashboard/reports/investor-report-view";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 
 const currentYear = new Date().getFullYear();
@@ -31,19 +32,26 @@ export default function ReportsPage() {
     const [agents, setAgents] = useState<Agent[]>([]);
     const [loading, setLoading] = useState(true);
 
-    // State for Unit Report
+    // Unit Report State
     const [selectedUnitId, setSelectedUnitId] = useState<string>('all');
     const [selectedUnitMonth, setSelectedUnitMonth] = useState<string>(String(new Date().getMonth()));
     const [selectedUnitYear, setSelectedUnitYear] = useState<string>(String(new Date().getFullYear()));
     const [generatingUnitReport, setGeneratingUnitReport] = useState(false);
     const [generatedUnitReport, setGeneratedUnitReport] = useState<any>(null);
 
-    // State for Agent Report
+    // Agent Report State
     const [selectedAgentId, setSelectedAgentId] = useState<string | undefined>(undefined);
     const [selectedAgentMonth, setSelectedAgentMonth] = useState<string>(String(new Date().getMonth()));
     const [selectedAgentYear, setSelectedAgentYear] = useState<string>(String(new Date().getFullYear()));
     const [generatingAgentReport, setGeneratingAgentReport] = useState(false);
     const [generatedAgentReport, setGeneratedAgentReport] = useState<any>(null);
+    
+    // Investor Report State
+    const [selectedInvestorId, setSelectedInvestorId] = useState<string | undefined>(undefined);
+    const [selectedInvestorMonth, setSelectedInvestorMonth] = useState<string>(String(new Date().getMonth()));
+    const [selectedInvestorYear, setSelectedInvestorYear] = useState<string>(String(new Date().getFullYear()));
+    const [generatingInvestorReport, setGeneratingInvestorReport] = useState(false);
+    const [generatedInvestorReport, setGeneratedInvestorReport] = useState<any>(null);
 
 
     useEffect(() => {
@@ -66,50 +74,55 @@ export default function ReportsPage() {
         fetchData();
     }, []);
 
+    const getMonthlyPerformance = (unitIds: string[], year: number, month: number) => {
+        const relevantBookings = allBookings.filter(b => {
+            const bookingDate = new Date(b.checkinDate);
+            return unitIds.includes(b.unitId) && bookingDate.getFullYear() === year && bookingDate.getMonth() === month;
+        });
+
+        const relevantExpenses = allExpenses.filter(e => {
+            const expenseDate = new Date(e.date);
+            // Include general expenses (unitId is null) and expenses for the specific units
+            return (!e.unitId || unitIds.includes(e.unitId)) && expenseDate.getFullYear() === year && expenseDate.getMonth() === month;
+        });
+        
+        const totalRevenue = relevantBookings.reduce((acc, booking) => acc + booking.totalAmount, 0);
+
+        // Distribute general expenses proportionally
+        const generalExpenses = allExpenses.filter(e => !e.unitId && new Date(e.date).getFullYear() === year && new Date(e.date).getMonth() === month)
+                                          .reduce((sum, e) => sum + e.amount, 0);
+        const proportion = unitIds.length / (units.length || 1);
+        const proportionalGeneralExpenses = generalExpenses * proportion;
+        
+        const specificExpenses = relevantExpenses.filter(e => e.unitId).reduce((acc, expense) => acc + expense.amount, 0);
+
+        const totalExpenses = specificExpenses + proportionalGeneralExpenses;
+        const netProfit = totalRevenue - totalExpenses;
+
+        return { totalRevenue, totalExpenses, netProfit, bookings: relevantBookings, expenses: relevantExpenses };
+    };
+
     const handleGenerateUnitReport = () => {
         setGeneratingUnitReport(true);
         const year = parseInt(selectedUnitYear);
         const month = parseInt(selectedUnitMonth);
 
-        let filteredBookings = allBookings;
-        let filteredExpenses = allExpenses;
-
-        if (selectedUnitId !== 'all') {
-            filteredBookings = filteredBookings.filter(b => b.unitId === selectedUnitId);
-            filteredExpenses = filteredExpenses.filter(e => e.unitId === selectedUnitId);
-        }
-
-        const monthlyBookings = filteredBookings.filter(b => {
-            const bookingDate = new Date(b.checkinDate);
-            return bookingDate.getFullYear() === year && bookingDate.getMonth() === month;
-        });
-
-        const monthlyExpenses = filteredExpenses.filter(e => {
-            const expenseDate = new Date(e.date);
-            return expenseDate.getFullYear() === year && expenseDate.getMonth() === month;
-        });
-
-        const totalRevenue = monthlyBookings.reduce((acc, booking) => acc + booking.totalAmount, 0);
-        const totalExpenses = monthlyExpenses.reduce((acc, expense) => acc + expense.amount, 0);
-        const netProfit = totalRevenue - totalExpenses;
+        const unitIdsToReport = selectedUnitId === 'all' ? units.map(u => u.id!) : [selectedUnitId];
+        const performance = getMonthlyPerformance(unitIdsToReport, year, month);
 
         const unit = units.find(u => u.id === selectedUnitId);
         const investor = unit ? investors.find(i => i.unitIds.includes(unit.id!)) : null;
         
         let investorShare = 0;
-        if (investor && netProfit > 0) {
-            investorShare = (netProfit * investor.sharePercentage) / 100;
+        if (investor && performance.netProfit > 0) {
+            investorShare = (performance.netProfit * investor.sharePercentage) / 100;
         }
 
         setGeneratedUnitReport({
             unit: unit || { name: 'All Units' },
             month: months[month].label,
             year,
-            bookings: monthlyBookings,
-            expenses: monthlyExpenses,
-            totalRevenue,
-            totalExpenses,
-            netProfit,
+            ...performance,
             investor,
             investorShare
         });
@@ -149,13 +162,36 @@ export default function ReportsPage() {
 
         setGeneratingAgentReport(false);
     }
+    
+    const handleGenerateInvestorReport = () => {
+        if (!selectedInvestorId) return;
 
-    const overallStats = {
-        totalRevenue: allBookings.reduce((acc, booking) => acc + booking.totalAmount, 0),
-        totalExpenses: allExpenses.reduce((acc, expense) => acc + expense.amount, 0),
-        netProfit: allBookings.reduce((acc, booking) => acc + booking.totalAmount, 0) - allExpenses.reduce((acc, expense) => acc + expense.amount, 0),
-        profitMargin: allBookings.length > 0 ? ((allBookings.reduce((acc, booking) => acc + booking.totalAmount, 0) - allExpenses.reduce((acc, expense) => acc + expense.amount, 0)) / allBookings.reduce((acc, booking) => acc + booking.totalAmount, 0)) * 100 : 0
+        setGeneratingInvestorReport(true);
+        const year = parseInt(selectedInvestorYear);
+        const month = parseInt(selectedInvestorMonth);
+        const investor = investors.find(i => i.id === selectedInvestorId);
+        if (!investor) {
+            setGeneratingInvestorReport(false);
+            return;
+        }
+
+        const performance = getMonthlyPerformance(investor.unitIds, year, month);
+        const investorShare = (performance.netProfit > 0) ? (performance.netProfit * investor.sharePercentage) / 100 : 0;
+        
+        const investorUnits = units.filter(u => investor.unitIds.includes(u.id!));
+
+        setGeneratedInvestorReport({
+            investor,
+            units: investorUnits,
+            month: months[month].label,
+            year,
+            ...performance,
+            investorShare,
+        });
+
+        setGeneratingInvestorReport(false);
     };
+
 
     if (loading) {
       return <div className="p-4 text-center">Loading reports...</div>
@@ -251,9 +287,40 @@ export default function ReportsPage() {
         </TabsContent>
         <TabsContent value="investor">
             <div className="prime-card p-4 my-4">
-                <h3 className="text-lg font-semibold text-gray-800 mb-4">Investor Reports</h3>
-                <p className="text-sm text-gray-500 text-center py-8">Investor reporting feature is coming soon.</p>
+                <h3 className="text-lg font-semibold text-gray-800 mb-4">Generate Monthly Investor Report</h3>
+                 <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-4">
+                    <Select value={selectedInvestorId} onValueChange={setSelectedInvestorId}>
+                        <SelectTrigger><SelectValue placeholder="Select Investor" /></SelectTrigger>
+                        <SelectContent>
+                            {investors.map(investor => (
+                                <SelectItem key={investor.id} value={investor.id!}>{investor.name}</SelectItem>
+                            ))}
+                        </SelectContent>
+                    </Select>
+
+                    <Select value={selectedInvestorMonth} onValueChange={setSelectedInvestorMonth}>
+                        <SelectTrigger><SelectValue placeholder="Select Month" /></SelectTrigger>
+                        <SelectContent>
+                            {months.map(month => (
+                                <SelectItem key={month.value} value={String(month.value)}>{month.label}</SelectItem>
+                            ))}
+                        </SelectContent>
+                    </Select>
+
+                    <Select value={selectedInvestorYear} onValueChange={setSelectedInvestorYear}>
+                        <SelectTrigger><SelectValue placeholder="Select Year" /></SelectTrigger>
+                        <SelectContent>
+                            {years.map(year => (
+                                <SelectItem key={year} value={String(year)}>{year}</SelectItem>
+                            ))}
+                        </SelectContent>
+                    </Select>
+                    <Button onClick={handleGenerateInvestorReport} className="prime-button w-full" disabled={generatingInvestorReport || !selectedInvestorId}>
+                    {generatingInvestorReport ? 'Generating...' : 'Generate'}
+                    </Button>
+                </div>
             </div>
+            {generatedInvestorReport && <InvestorReportView report={generatedInvestorReport} />}
         </TabsContent>
       </Tabs>
     </div>
