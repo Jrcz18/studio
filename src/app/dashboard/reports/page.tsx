@@ -83,7 +83,7 @@ export default function ReportsPage() {
         const relevantExpenses = allExpenses.filter(e => {
             const expenseDate = new Date(e.date);
             // Include general expenses (unitId is null) and expenses for the specific units
-            return (!e.unitId || unitIds.includes(e.unitId)) && expenseDate.getFullYear() === year && expenseDate.getMonth() === month;
+            return (e.unitId && unitIds.includes(e.unitId)) && expenseDate.getFullYear() === year && expenseDate.getMonth() === month;
         });
         
         const totalRevenue = relevantBookings.reduce((acc, booking) => acc + booking.totalAmount, 0);
@@ -111,7 +111,7 @@ export default function ReportsPage() {
         const performance = getMonthlyPerformance(unitIdsToReport, year, month);
 
         const unit = units.find(u => u.id === selectedUnitId);
-        const investor = unit ? investors.find(i => i.unitIds && i.unitIds.includes(unit.id!)) : null;
+        const investor = unit && unit.id ? investors.find(i => i.unitIds && i.unitIds.includes(unit.id!)) : null;
         
         let investorShare = 0;
         if (investor && performance.netProfit > 0) {
@@ -194,6 +194,8 @@ export default function ReportsPage() {
                  reportData = {
                     totalRevenueGenerated: 0,
                     totalCommission: 0,
+                    unitPerformance: {},
+                    agentContributionPercentage: 0,
                 };
             }
         }
