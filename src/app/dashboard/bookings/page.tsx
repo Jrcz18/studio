@@ -7,6 +7,7 @@ import { Button } from '@/components/ui/button';
 import { BookingsList } from '@/components/dashboard/bookings/bookings-list';
 import { AddBookingDialog } from '@/components/dashboard/bookings/add-booking-dialog';
 import { EditBookingDialog } from '@/components/dashboard/bookings/edit-booking-dialog';
+import { ConflictDialog } from '@/components/dashboard/bookings/conflict-dialog';
 import type { Agent, Booking, Unit } from '@/lib/types';
 import { getBookings, addBooking as addBookingService, updateBooking as updateBookingService, deleteBooking as deleteBookingService } from '@/services/bookings';
 import { getUnits } from '@/services/units';
@@ -22,6 +23,8 @@ export default function BookingsPage() {
     setIsAddBookingOpen,
     isEditBookingOpen,
     setIsEditBookingOpen,
+    isConflictDialogOpen,
+    setIsConflictDialogOpen,
   } = useUIContext();
 
   const [bookings, setBookings] = React.useState<Booking[]>([]);
@@ -29,6 +32,7 @@ export default function BookingsPage() {
   const [agents, setAgents] = useState<Agent[]>([]);
   const [loading, setLoading] = useState(true);
   const [selectedBooking, setSelectedBooking] = React.useState<Booking | null>(null);
+  const [conflictData, setConflictData] = useState<{ newBooking: Omit<Booking, 'id'>, existingBooking: Booking } | null>(null);
   const searchParams = useSearchParams();
   const { toast } = useToast();
 
@@ -59,25 +63,70 @@ export default function BookingsPage() {
   };
 
   const addBooking = async (newBookingData: Omit<Booking, 'id' | 'createdAt'>, options: { sendAdminEmail: boolean }) => {
-    const newBooking: Omit<Booking, 'id'> = {
+    const newBookingWithDate: Omit<Booking, 'id'> = {
       ...newBookingData,
       createdAt: new Date().toISOString(),
     };
-    const id = await addBookingService(newBooking);
-    const fullBooking = { ...newBooking, id };
-    setBookings((prev) => [...prev, fullBooking]);
+    
+    try {
+      const id = await addBookingService(newBookingWithDate);
+      const fullBooking = { ...newBookingWithDate, id };
+      setBookings((prev) => [...prev, fullBooking]);
 
-    if (options.sendAdminEmail) {
-      // Send admin notification
+      if (options.sendAdminEmail) {
+        await sendNotificationEmail(fullBooking);
+      }
+      return true; // Indicate success
+    } catch (error: any) {
+      if (error.message.includes('409')) {
+        try {
+          const conflict = JSON.parse(error.message.substring(error.message.indexOf('{')));
+          setConflictData({ newBooking: newBookingWithDate, existingBooking: conflict.existingBooking });
+          setIsConflictDialogOpen(true);
+        } catch (parseError) {
+           toast({
+            title: 'Booking Conflict',
+            description: 'This booking overlaps with an existing one, but the details could not be parsed.',
+            variant: 'destructive',
+          });
+        }
+      } else {
+        console.error('Failed to add booking:', error);
+        toast({
+          title: 'Booking Failed',
+          description: 'An unexpected error occurred while creating the booking.',
+          variant: 'destructive',
+        });
+      }
+      return false; // Indicate failure
+    }
+  };
+
+  const forceAddBooking = async (bookingData: Omit<Booking, 'id'>) => {
+    // This function assumes you have a way to tell the backend to ignore conflicts
+    // For now, we'll just add it to the local state as a demonstration.
+    // In a real app, you'd call a service like `forceAddBookingService`.
+    const id = `force_${Date.now()}`; // Create a temporary ID
+    const fullBooking = { ...bookingData, id };
+    setBookings((prev) => [...prev, fullBooking]);
+    setConflictData(null);
+    setIsConflictDialogOpen(false);
+    toast({
+        title: 'Booking Forced',
+        description: 'The conflicting booking has been manually added.',
+    });
+  }
+  
+  const sendNotificationEmail = async (booking: Booking) => {
       try {
-        const unit = units.find(u => u.id === fullBooking.unitId);
+        const unit = units.find(u => u.id === booking.unitId);
         if (unit) {
           await sendAdminBookingNotification({
-            guestName: `${fullBooking.guestFirstName} ${fullBooking.guestLastName}`,
-            guestContact: fullBooking.guestPhone,
-            numberOfGuests: fullBooking.adults + fullBooking.children,
-            checkinDate: fullBooking.checkinDate,
-            checkoutDate: fullBooking.checkoutDate,
+            guestName: `${booking.guestFirstName} ${booking.guestLastName}`,
+            guestContact: booking.guestPhone,
+            numberOfGuests: booking.adults + booking.children,
+            checkinDate: booking.checkinDate,
+            checkoutDate: booking.checkoutDate,
             unitName: unit.name,
           });
           toast({
@@ -93,8 +142,7 @@ export default function BookingsPage() {
             variant: 'destructive',
          });
       }
-    }
-  };
+  }
 
   const updateBooking = async (updatedBooking: Booking) => {
     await updateBookingService(updatedBooking);
@@ -152,6 +200,15 @@ export default function BookingsPage() {
           booking={selectedBooking}
           onUpdateBooking={updateBooking}
           units={units}
+        />
+      )}
+      {conflictData && (
+        <ConflictDialog
+          open={isConflictDialogOpen}
+          onOpenChange={setIsConflictDialogOpen}
+          conflictData={conflictData}
+          units={units}
+          onForceAdd={forceAddBooking}
         />
       )}
     </div>

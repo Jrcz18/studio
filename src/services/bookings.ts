@@ -23,7 +23,11 @@ export async function addBooking(bookingData: Omit<Booking, 'id'>): Promise<stri
 
     if (!response.ok) {
         const errorData = await response.json();
-        throw new Error(errorData.error || 'Failed to add booking via backend');
+        // For conflict errors, embed the data in the error message
+        if (response.status === 409) {
+            throw new Error(`409 Conflict: ${JSON.stringify(errorData)}`);
+        }
+        throw new Error(errorData.error || `Request failed with status ${response.status}`);
     }
     
     const result = await response.json();

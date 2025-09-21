@@ -38,7 +38,7 @@ export function AddBookingDialog({
   onAddBooking: (
     booking: Omit<Booking, 'id' | 'createdAt'>,
     options: { sendAdminEmail: boolean }
-  ) => void;
+  ) => Promise<boolean>;
   units: Unit[];
   agents: Agent[];
 }) {
@@ -52,6 +52,7 @@ export function AddBookingDialog({
   const [adults, setAdults] = useState(2);
   const [numChildren, setChildren] = useState(0);
   const [sendAdminEmail, setSendAdminEmail] = useState(true);
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   useEffect(() => {
     if (selectedUnitId && checkinDate && checkoutDate) {
@@ -91,6 +92,7 @@ export function AddBookingDialog({
       setAdults(2);
       setChildren(0);
       setSendAdminEmail(true);
+      setIsSubmitting(false);
       const today = new Date().toISOString().split('T')[0];
       setCheckinDate(today);
       const tomorrow = new Date(today);
@@ -108,8 +110,9 @@ export function AddBookingDialog({
     }
   }, [checkinDate]);
 
-  const handleSubmit = (e: React.FormEvent<HTMLFormElement>) => {
+  const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
+    setIsSubmitting(true);
     const formData = new FormData(e.currentTarget);
     const agentId = formData.get('agentId') as string;
     const newBooking = {
@@ -131,8 +134,11 @@ export function AddBookingDialog({
         | 'paid',
       specialRequests: formData.get('specialRequests') as string,
     };
-    onAddBooking(newBooking, { sendAdminEmail });
-    onOpenChange(false);
+    const success = await onAddBooking(newBooking, { sendAdminEmail });
+    setIsSubmitting(false);
+    if (success) {
+      onOpenChange(false);
+    }
   };
 
   const unit = units.find(u => u.id === selectedUnitId);
@@ -284,7 +290,7 @@ export function AddBookingDialog({
             </label>
           </div>
           <DialogFooter>
-            <Button type="submit">Add Booking</Button>
+            <Button type="submit" disabled={isSubmitting}>{isSubmitting ? 'Submitting...' : 'Add Booking'}</Button>
           </DialogFooter>
         </form>
       </DialogContent>

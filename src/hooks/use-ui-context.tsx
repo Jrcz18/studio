@@ -12,6 +12,8 @@ interface UIContextType {
   setIsAddBookingOpen: (open: boolean) => void;
   isEditBookingOpen: boolean;
   setIsEditBookingOpen: (open: boolean) => void;
+  isConflictDialogOpen: boolean;
+  setIsConflictDialogOpen: (open: boolean) => void;
   isAddAgentOpen: boolean;
   setIsAddAgentOpen: (open: boolean) => void;
   isAddExpenseOpen: boolean;
@@ -33,6 +35,7 @@ export function UIProvider({ children }: { children: ReactNode }) {
   const [isEditUnitOpen, setIsEditUnitOpen] = useState(false);
   const [isAddBookingOpen, setIsAddBookingOpen] = useState(false);
   const [isEditBookingOpen, setIsEditBookingOpen] = useState(false);
+  const [isConflictDialogOpen, setIsConflictDialogOpen] = useState(false);
   const [isAddAgentOpen, setIsAddAgentOpen] = useState(false);
   const [isAddExpenseOpen, setIsAddExpenseOpen] = useState(false);
   const [isAddInvestorOpen, setIsAddInvestorOpen] = useState(false);
@@ -49,6 +52,8 @@ export function UIProvider({ children }: { children: ReactNode }) {
     setIsAddBookingOpen,
     isEditBookingOpen,
     setIsEditBookingOpen,
+    isConflictDialogOpen,
+    setIsConflictDialogOpen,
     isAddAgentOpen,
     setIsAddAgentOpen,
     isAddExpenseOpen,

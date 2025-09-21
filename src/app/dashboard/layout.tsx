@@ -93,6 +93,7 @@ function Layout({ children }: { children: React.ReactNode }) {
     isEditUnitOpen,
     isAddBookingOpen,
     isEditBookingOpen,
+    isConflictDialogOpen,
     isAddAgentOpen,
     isAddExpenseOpen,
     isAddInvestorOpen,
@@ -107,6 +108,7 @@ function Layout({ children }: { children: React.ReactNode }) {
     isEditUnitOpen ||
     isAddBookingOpen ||
     isEditBookingOpen ||
+    isConflictDialogOpen ||
     isAddAgentOpen ||
     isAddExpenseOpen ||
     isAddInvestorOpen ||
