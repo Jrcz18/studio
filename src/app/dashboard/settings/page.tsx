@@ -2,7 +2,7 @@
 'use client';
 
 import { useAuth } from '@/hooks/use-auth.tsx';
-import { LogOut, Wifi, KeyRound } from 'lucide-react';
+import { LogOut, Wifi, KeyRound, ArrowLeft } from 'lucide-react';
 import Link from 'next/link';
 import { useState } from 'react';
 
@@ -33,10 +33,15 @@ export default function SettingsPage() {
 
   return (
     <div className="p-4">
-      <div className="mb-6">
-        <h2 className="text-xl font-bold text-gray-900">Settings</h2>
-        <p className="text-sm text-gray-500">Manage your profile and application settings.</p>
-      </div>
+        <div className="flex items-center mb-6">
+            <Link href="/dashboard/more" className="mr-4 p-2 rounded-full hover:bg-gray-100">
+                <ArrowLeft className="w-5 h-5" />
+            </Link>
+            <div>
+                <h2 className="text-xl font-bold text-gray-900">Settings</h2>
+                <p className="text-sm text-gray-500">Manage your profile and application settings.</p>
+            </div>
+        </div>
       
       <div className="space-y-6">
         <div className="prime-card p-6">

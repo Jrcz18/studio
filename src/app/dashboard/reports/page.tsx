@@ -14,6 +14,8 @@ import { ReportView } from "@/components/dashboard/reports/report-view";
 import { AgentReportView } from "@/components/dashboard/reports/agent-report-view";
 import { InvestorReportView } from "@/components/dashboard/reports/investor-report-view";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { ArrowLeft } from "lucide-react";
+import Link from "next/link";
 
 const currentYear = new Date().getFullYear();
 const years = Array.from({ length: 5 }, (_, i) => currentYear - i);
@@ -249,9 +251,14 @@ export default function ReportsPage() {
 
   return (
     <div className="p-4">
-      <div className="mb-6">
-        <h2 className="text-xl font-bold text-gray-900">Reports</h2>
-        <p className="text-sm text-gray-500">Financial performance overview</p>
+      <div className="flex items-center mb-6">
+        <Link href="/dashboard/more" className="mr-4 p-2 rounded-full hover:bg-gray-100">
+            <ArrowLeft className="w-5 h-5" />
+        </Link>
+        <div>
+            <h2 className="text-xl font-bold text-gray-900">Reports</h2>
+            <p className="text-sm text-gray-500">Financial performance overview</p>
+        </div>
       </div>
       
       <Tabs defaultValue="unit" className="w-full">

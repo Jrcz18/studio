@@ -55,7 +55,7 @@ export default function ReceiptSettingsPage() {
     return (
         <div className="p-4">
             <div className="flex items-center mb-6">
-                <Link href="/dashboard/settings" className="mr-4 p-2 rounded-full hover:bg-gray-100">
+                <Link href="/dashboard/more" className="mr-4 p-2 rounded-full hover:bg-gray-100">
                    <ArrowLeft className="w-5 h-5" />
                 </Link>
                 <div>
