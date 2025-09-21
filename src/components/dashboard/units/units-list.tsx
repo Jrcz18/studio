@@ -30,19 +30,18 @@ export function UnitsList({ units, onEdit, onDelete }: UnitsListProps) {
 function UnitCard({ unit, onEdit, onDelete }: { unit: Unit, onEdit: (unit: Unit) => void, onDelete: (unitId: string) => void }) {
   const [masterUrlCopied, setMasterUrlCopied] = useState(false);
 
-  const statusVariant = {
-    available: 'bg-green-100 text-green-800',
-    occupied: 'bg-red-100 text-red-800',
-    maintenance: 'bg-yellow-100 text-yellow-800',
-  };
-
   const handleCopyMasterUrl = () => {
     const url = `https://mpbookingserver.vercel.app/api/ical/${unit.id}`;
     navigator.clipboard.writeText(url);
     setMasterUrlCopied(true);
     setTimeout(() => setMasterUrlCopied(false), 2000);
-  };
+  };  
 
+  const statusVariant = {
+    available: 'bg-green-100 text-green-800',
+    occupied: 'bg-red-100 text-red-800',
+    maintenance: 'bg-yellow-100 text-yellow-800',
+  };
 
   return (
     <div className="fb-card">
@@ -128,3 +127,4 @@ function UnitCard({ unit, onEdit, onDelete }: { unit: Unit, onEdit: (unit: Unit)
     </div>
   );
 }
+
