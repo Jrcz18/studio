@@ -1,3 +1,4 @@
+
 'use server';
 /**
  * @fileOverview A collection of AI tools for the Genkit assistant.
@@ -59,7 +60,7 @@ export const getWeather = ai.defineTool(
 );
 
 
-// 3. Local Events API Tool (Placeholder)
+// 3. Local Events API Tool (Now with Dynamic Dates)
 export const findLocalEvents = ai.defineTool(
   {
     name: 'findLocalEvents',
@@ -72,15 +73,20 @@ export const findLocalEvents = ai.defineTool(
   async (input) => {
     console.log(`Finding local events near ${input.location}`);
     
-    // TODO: Implement a real event API call here.
-    // 1. Sign up for an event API service (e.g., Ticketmaster, Eventbrite).
-    // 2. Get an API key and add it to your .env file (e.g., TICKETMASTER_API_KEY=your_key).
-    // 3. Use `fetch` to call the events API with the location.
-    // 4. Parse the response and return a formatted string of events.
+    // TODO: Implement a real event API call here (e.g., Ticketmaster, Eventbrite).
 
-    // For now, returning hardcoded data for demonstration.
+    // For now, returning dynamic placeholder data for demonstration.
+    const today = new Date();
+    const futureEvent1 = new Date(today);
+    futureEvent1.setDate(today.getDate() + 7); // 7 days from now
+    
+    const futureEvent2 = new Date(today);
+    futureEvent2.setDate(today.getDate() + 12); // 12 days from now
+
+    const formatDate = (date: Date) => date.toLocaleDateString('en-US', { month: 'long', day: 'numeric' });
+
     return `Upcoming events near ${input.location}: 
-      - P-Pop Convention at Araneta Coliseum on July 10th.
-      - Manila Food & Wine Festival at SMX Convention Center from July 15-17th.`;
+      - OPM Legends Concert at Ayala Triangle on ${formatDate(futureEvent1)}.
+      - Makati Street Food Fair at Salcedo Market from ${formatDate(futureEvent2)}.`;
   }
 );
