@@ -67,3 +67,4 @@ export async function deleteNotification(notificationId: string): Promise<void> 
     const notificationDoc = doc(db, 'notifications', notificationId);
     await deleteDoc(notificationDoc);
 }
+

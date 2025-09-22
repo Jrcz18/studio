@@ -11,8 +11,6 @@ import { formatDate } from '@/lib/utils';
 import { cn } from '@/lib/utils';
 import { useToast } from '@/hooks/use-toast';
 import { findLocalEvents } from '@/ai/tools';
-import Link from 'next/link';
-
 
 const iconMap: Record<AppNotification['type'], React.ReactNode> = {
     booking: <Calendar className="w-5 h-5 text-blue-500" />,
@@ -63,7 +61,6 @@ export default function NotificationsPage() {
                         console.error("Failed to check for local events:", error);
                     }
                 }
-                // Finally, fetch all notifications including any new one
                 fetchNotifications();
             }
             checkEventsAndFetch();
@@ -99,6 +96,15 @@ export default function NotificationsPage() {
             });
         }
     };
+    
+    const markAsRead = async (notificationId: string) => {
+        const notification = notifications.find(n => n.id === notificationId);
+        if (notification && !notification.isRead) {
+            await markAllNotificationsAsRead(notificationId);
+            setNotifications(prev => prev.map(n => n.id === notificationId ? {...n, isRead: true} : n));
+        }
+    }
+
 
     if (loading) {
         return <div className="p-4 text-center">Loading notifications...</div>;
@@ -120,11 +126,11 @@ export default function NotificationsPage() {
             <div className="space-y-3">
                 {notifications.length > 0 ? (
                     notifications.map(notification => (
-                        <Link
+                        <div
                             key={notification.id}
-                            href={`/dashboard/notifications/${notification.id}`}
+                            onClick={() => markAsRead(notification.id!)}
                             className={cn(
-                                "prime-card block relative p-4 flex items-start space-x-4 cursor-pointer transition-colors no-underline",
+                                "prime-card block relative p-4 flex items-start space-x-4 cursor-pointer transition-colors",
                                 notification.isRead ? 'bg-white' : 'bg-yellow-50 border-yellow-200'
                             )}
                         >
@@ -150,7 +156,7 @@ export default function NotificationsPage() {
                             {!notification.isRead && (
                                 <div className="w-2.5 h-2.5 bg-blue-500 rounded-full self-center flex-shrink-0 mr-2" aria-label="Unread"></div>
                             )}
-                        </Link>
+                        </div>
                     ))
                 ) : (
                     <div className="text-center py-16">
@@ -163,3 +169,4 @@ export default function NotificationsPage() {
         </div>
     );
 }
+
