@@ -36,12 +36,10 @@ export async function getUnreadNotifications(userId: string): Promise<AppNotific
 
 
 // Add a new notification
-export async function addNotification(notificationData: Omit<AppNotification, 'id' | 'link'>): Promise<string> {
+export async function addNotification(notificationData: Omit<AppNotification, 'id'>): Promise<string> {
     const docRef = await addDoc(notificationsCollection, {
         ...notificationData,
     });
-    // Now update the document with its own ID in the link
-    await updateDoc(docRef, { link: `/dashboard/notifications/${docRef.id}`});
     return docRef.id;
 }
 

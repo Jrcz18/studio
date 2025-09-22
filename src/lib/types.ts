@@ -4,6 +4,7 @@
 
 
 
+
 export type Unit = {
   id?: string;
   name: string;
@@ -155,6 +156,5 @@ export type AppNotification = {
     description: string;
     createdAt: string;
     isRead: boolean;
-    link?: string;
     data?: Record<string, any>;
 };
