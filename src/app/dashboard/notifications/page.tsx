@@ -4,20 +4,14 @@
 import React, { useEffect, useState, useCallback } from 'react';
 import { useAuth } from '@/hooks/use-auth';
 import type { AppNotification } from '@/lib/types';
-import { getAllNotifications, markNotificationAsRead, markAllNotificationsAsRead, deleteNotification, addNotification } from '@/services/notifications';
+import { getAllNotifications, markAllNotificationsAsRead, deleteNotification, addNotification } from '@/services/notifications';
 import { Button } from '@/components/ui/button';
 import { Bell, Calendar, DollarSign, CheckCircle, X } from 'lucide-react';
 import { formatDate } from '@/lib/utils';
 import { cn } from '@/lib/utils';
 import { useToast } from '@/hooks/use-toast';
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-} from '@/components/ui/dialog';
-import NotificationDetailClient from '@/components/dashboard/notifications/notification-detail-client';
 import { findLocalEvents } from '@/ai/tools';
+import Link from 'next/link';
 
 
 const iconMap: Record<AppNotification['type'], React.ReactNode> = {
@@ -33,8 +27,6 @@ export default function NotificationsPage() {
     const [notifications, setNotifications] = useState<AppNotification[]>([]);
     const [loading, setLoading] = useState(true);
     const { toast } = useToast();
-    const [selectedNotification, setSelectedNotification] = useState<AppNotification | null>(null);
-    const [isDetailOpen, setIsDetailOpen] = useState(false);
 
     const fetchNotifications = useCallback(async () => {
         if (user) {
@@ -78,14 +70,6 @@ export default function NotificationsPage() {
         }
     }, [user, fetchNotifications]);
 
-    const handleNotificationClick = async (notification: AppNotification) => {
-        if (!notification.isRead) {
-            await markNotificationAsRead(notification.id!);
-            setNotifications(prev => prev.map(n => n.id === notification.id ? { ...n, isRead: true } : n));
-        }
-        setSelectedNotification(notification);
-        setIsDetailOpen(true);
-    };
     
     const handleMarkAllAsRead = async () => {
         if (user) {
@@ -95,6 +79,7 @@ export default function NotificationsPage() {
     };
 
     const handleDeleteNotification = async (e: React.MouseEvent, notificationId: string) => {
+        e.preventDefault();
         e.stopPropagation(); 
 
         setNotifications(prev => prev.filter(n => n.id !== notificationId));
@@ -135,17 +120,17 @@ export default function NotificationsPage() {
             <div className="space-y-3">
                 {notifications.length > 0 ? (
                     notifications.map(notification => (
-                        <div
+                        <Link
                             key={notification.id}
-                            onClick={() => handleNotificationClick(notification)}
+                            href={`/dashboard/notifications/${notification.id}`}
                             className={cn(
-                                "prime-card relative p-4 flex items-start space-x-4 cursor-pointer transition-colors",
+                                "prime-card block relative p-4 flex items-start space-x-4 cursor-pointer transition-colors no-underline",
                                 notification.isRead ? 'bg-white' : 'bg-yellow-50 border-yellow-200'
                             )}
                         >
                              <button 
                                 onClick={(e) => handleDeleteNotification(e, notification.id!)}
-                                className="absolute top-2 right-2 p-1 rounded-full text-gray-400 hover:bg-gray-200 hover:text-gray-600"
+                                className="absolute top-2 right-2 p-1 rounded-full text-gray-400 hover:bg-gray-200 hover:text-gray-600 z-10"
                                 aria-label="Remove notification"
                             >
                                 <X className="w-4 h-4" />
@@ -165,7 +150,7 @@ export default function NotificationsPage() {
                             {!notification.isRead && (
                                 <div className="w-2.5 h-2.5 bg-blue-500 rounded-full self-center flex-shrink-0 mr-2" aria-label="Unread"></div>
                             )}
-                        </div>
+                        </Link>
                     ))
                 ) : (
                     <div className="text-center py-16">
@@ -175,16 +160,6 @@ export default function NotificationsPage() {
                     </div>
                 )}
             </div>
-            {selectedNotification && (
-                <Dialog open={isDetailOpen} onOpenChange={setIsDetailOpen}>
-                    <DialogContent>
-                        <DialogHeader>
-                            <DialogTitle>Notification Details</DialogTitle>
-                        </DialogHeader>
-                        <NotificationDetailClient notification={selectedNotification} />
-                    </DialogContent>
-                </Dialog>
-            )}
         </div>
     );
 }
