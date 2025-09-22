@@ -13,7 +13,7 @@ const Header = () => {
   const [currentDate, setCurrentDate] = useState('');
   const [notifications, setNotifications] = useState<AppNotification[]>([]);
   const { user } = useAuth();
-  const notificationsFetched = useRef(false);
+  const fetchedInitialData = useRef(false);
 
 
   useEffect(() => {
@@ -26,47 +26,40 @@ const Header = () => {
     };
     setCurrentDate(now.toLocaleDateString('en-US', options));
     
-    async function fetchNotifications() {
-        if(user && !notificationsFetched.current) {
-            notificationsFetched.current = true;
+    async function fetchInitialData() {
+        if(user && !fetchedInitialData.current) {
+            fetchedInitialData.current = true; // Prevents re-fetching
+            
+            // 1. Fetch notifications
             const notificationsData = await getUnreadNotifications(user.uid);
             setNotifications(notificationsData);
-        }
-    }
-    
-    async function checkForEvents() {
-        if (user) {
-            // This check should ideally be done once per day
+
+            // 2. Check for local events (once per day)
             const lastChecked = localStorage.getItem('lastEventCheck');
             const today = new Date().toISOString().split('T')[0];
-            if (lastChecked === today) return;
-
-            try {
-                const events = await findLocalEvents({ location: 'Makati' });
-                if (events) {
-                    await addNotification({
-                        userId: user.uid,
-                        type: 'event',
-                        title: 'Local Events Nearby!',
-                        description: 'Potential for booking surge. ' + events.split('\n')[1].trim().substring(2),
-                        isRead: false,
-                        createdAt: new Date().toISOString(),
-                    });
-                    localStorage.setItem('lastEventCheck', today);
-                }
-            } catch (error) {
-                console.error("Failed to check for local events:", error);
+            if (lastChecked !== today) {
+              try {
+                  const events = await findLocalEvents({ location: 'Makati' });
+                  if (events) {
+                      await addNotification({
+                          userId: user.uid,
+                          type: 'event',
+                          title: 'Local Events Nearby!',
+                          description: 'Potential for booking surge. ' + events.split('\n')[1].trim().substring(2),
+                          isRead: false,
+                          createdAt: new Date().toISOString(),
+                      });
+                      localStorage.setItem('lastEventCheck', today);
+                  }
+              } catch (error) {
+                  console.error("Failed to check for local events:", error);
+              }
             }
         }
     }
-
-    fetchNotifications();
-    checkForEvents();
     
-    // Set up a listener or periodic fetch for real-time updates
-    const interval = setInterval(fetchNotifications, 60000); // Poll every 60 seconds
-    return () => clearInterval(interval);
-
+    fetchInitialData();
+    
   }, [user]);
 
   const notificationCount = useMemo(() => {

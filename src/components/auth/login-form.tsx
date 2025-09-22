@@ -37,16 +37,12 @@ export function LoginForm() {
         }
     };
 
-    if (loading) {
+    if (loading || user) {
         return (
              <div className="text-center p-4">
                 <p>Loading...</p>
             </div>
         );
-    }
-    
-    if (user) {
-        return null;
     }
 
 
