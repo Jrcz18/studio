@@ -25,7 +25,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { useToast } from '@/hooks/use-toast';
 import type { ExpenseAnalysisInput, ExpenseAnalysisOutput } from '@/ai/flows/expense-analyzer';
 
-const API_BASE_URL = 'https://us-central1-unified-booker.cloudfunctions.net/api';
+const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL;
 
 async function analyzeExpense(input: ExpenseAnalysisInput): Promise<ExpenseAnalysisOutput> {
     const res = await fetch(`${API_BASE_URL}/analyzeExpense`, {

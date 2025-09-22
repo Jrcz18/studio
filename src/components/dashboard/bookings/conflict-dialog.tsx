@@ -16,7 +16,7 @@ import { formatDate } from '@/lib/utils';
 import type { ConflictResolutionInput } from '@/ai/flows/resolve-conflict';
 import { AlertCircle, Cpu } from 'lucide-react';
 
-const API_BASE_URL = 'https://us-central1-unified-booker.cloudfunctions.net/api';
+const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL;
 
 async function suggestConflictResolution(input: ConflictResolutionInput): Promise<{ suggestion: string }> {
     const res = await fetch(`${API_BASE_URL}/resolveConflict`, {

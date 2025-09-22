@@ -25,7 +25,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { Checkbox } from '@/components/ui/checkbox';
 import type { AdminNotificationInput } from '@/ai/flows/send-admin-notification';
 
-const API_BASE_URL = 'https://us-central1-unified-booker.cloudfunctions.net/api';
+const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL;
 
 async function sendAdminBookingNotification(input: AdminNotificationInput): Promise<any> {
     const res = await fetch(`${API_BASE_URL}/sendAdminNotification`, {

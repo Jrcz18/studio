@@ -6,7 +6,7 @@ import { Button } from '@/components/ui/button';
 import { useEffect, useState } from 'react';
 import type { ReportSummaryInput } from '@/ai/flows/report-summary';
 
-const API_BASE_URL = 'https://us-central1-unified-booker.cloudfunctions.net/api';
+const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL;
 
 async function generateReportSummary(input: ReportSummaryInput): Promise<{ summary: string }> {
     const res = await fetch(`${API_BASE_URL}/generateReportSummary`, {
