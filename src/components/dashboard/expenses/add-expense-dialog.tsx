@@ -22,8 +22,24 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import { Textarea } from '@/components/ui/textarea';
-import { analyzeExpense } from '@/ai/flows/expense-analyzer';
 import { useToast } from '@/hooks/use-toast';
+import type { ExpenseAnalysisInput, ExpenseAnalysisOutput } from '@/ai/flows/expense-analyzer';
+
+const API_BASE_URL = 'https://us-central1-unified-booker.cloudfunctions.net/api';
+
+async function analyzeExpense(input: ExpenseAnalysisInput): Promise<ExpenseAnalysisOutput> {
+    const res = await fetch(`${API_BASE_URL}/analyzeExpense`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(input),
+    });
+    if (!res.ok) {
+        const error = await res.json();
+        throw new Error(error.message || 'Request failed');
+    }
+    return res.json();
+}
+
 
 export function AddExpenseDialog({
   children,

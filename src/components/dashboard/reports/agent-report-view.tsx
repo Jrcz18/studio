@@ -3,8 +3,24 @@
 
 import { formatDate, printContent } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
-import { generateAgentReportSummary, AgentReportSummaryInput } from '@/ai/flows/agent-report-summary';
 import { useEffect, useState } from 'react';
+import type { AgentReportSummaryInput } from '@/ai/flows/agent-report-summary';
+
+const API_BASE_URL = 'https://us-central1-unified-booker.cloudfunctions.net/api';
+
+async function generateAgentReportSummary(input: AgentReportSummaryInput): Promise<{ summary: string }> {
+    const res = await fetch(`${API_BASE_URL}/generateAgentReportSummary`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(input),
+    });
+    if (!res.ok) {
+        const error = await res.json();
+        throw new Error(error.message || 'Request failed');
+    }
+    return res.json();
+}
+
 
 export function AgentReportView({ report }: { report: any }) {
   const [summary, setSummary] = useState('');

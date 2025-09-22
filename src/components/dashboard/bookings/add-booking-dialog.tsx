@@ -23,6 +23,23 @@ import {
 } from '@/components/ui/select';
 import { Textarea } from '@/components/ui/textarea';
 import { Checkbox } from '@/components/ui/checkbox';
+import type { AdminNotificationInput } from '@/ai/flows/send-admin-notification';
+
+const API_BASE_URL = 'https://us-central1-unified-booker.cloudfunctions.net/api';
+
+async function sendAdminBookingNotification(input: AdminNotificationInput): Promise<any> {
+    const res = await fetch(`${API_BASE_URL}/sendAdminNotification`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(input),
+    });
+    if (!res.ok) {
+        const error = await res.json();
+        throw new Error(error.message || 'Request failed');
+    }
+    return res.json();
+}
+
 
 export function AddBookingDialog({
   children,

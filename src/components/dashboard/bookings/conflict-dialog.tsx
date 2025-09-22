@@ -1,3 +1,4 @@
+
 'use client';
 
 import type { Booking, Unit } from '@/lib/types';
@@ -12,8 +13,23 @@ import {
 } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { formatDate } from '@/lib/utils';
-import { suggestConflictResolution, ConflictResolutionInput } from '@/ai/flows/resolve-conflict';
+import type { ConflictResolutionInput } from '@/ai/flows/resolve-conflict';
 import { AlertCircle, Cpu } from 'lucide-react';
+
+const API_BASE_URL = 'https://us-central1-unified-booker.cloudfunctions.net/api';
+
+async function suggestConflictResolution(input: ConflictResolutionInput): Promise<{ suggestion: string }> {
+    const res = await fetch(`${API_BASE_URL}/resolveConflict`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(input),
+    });
+    if (!res.ok) {
+        const error = await res.json();
+        throw new Error(error.message || 'Request failed');
+    }
+    return res.json();
+}
 
 
 interface ConflictDialogProps {

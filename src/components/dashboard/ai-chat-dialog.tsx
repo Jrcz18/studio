@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useState, useRef, useEffect } from 'react';
@@ -10,14 +11,30 @@ import {
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { ScrollArea } from '@/components/ui/scroll-area';
-import { chat, ChatInput } from '@/ai/flows/chat';
 import { Cpu, Send, User } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import type { ChatInput } from '@/ai/flows/chat';
 
 type Message = {
   role: 'user' | 'model';
   content: string;
 };
+
+const API_BASE_URL = 'https://us-central1-unified-booker.cloudfunctions.net/api';
+
+async function chat(input: ChatInput): Promise<{ response: string }> {
+    const res = await fetch(`${API_BASE_URL}/chat`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(input),
+    });
+    if (!res.ok) {
+        const error = await res.json();
+        throw new Error(error.message || 'AI chat request failed');
+    }
+    return res.json();
+}
+
 
 export function AIChatDialog({
   open,

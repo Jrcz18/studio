@@ -3,19 +3,24 @@
 
 import { formatDate, printContent } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
-import { generateInvestorReportSummary } from '@/ai/flows/investor-report-summary';
 import { useEffect, useState } from 'react';
-import type { z } from 'genkit';
+import type { InvestorReportSummaryInput } from '@/ai/flows/investor-report-summary';
 
-type InvestorReportSummaryInput = {
-    investorName: string;
-    month: string;
-    year: number;
-    totalNetProfit: number;
-    sharePercentage: number;
-    investorShare: number;
+
+const API_BASE_URL = 'https://us-central1-unified-booker.cloudfunctions.net/api';
+
+async function generateInvestorReportSummary(input: InvestorReportSummaryInput): Promise<{ summary: string }> {
+    const res = await fetch(`${API_BASE_URL}/generateInvestorReportSummary`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(input),
+    });
+    if (!res.ok) {
+        const error = await res.json();
+        throw new Error(error.message || 'Request failed');
+    }
+    return res.json();
 }
-
 
 export function InvestorReportView({ report }: { report: any }) {
   const [summary, setSummary] = useState('');
