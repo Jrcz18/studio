@@ -12,8 +12,7 @@
 
 import { ai } from '@/ai/genkit';
 import { z } from 'genkit';
-import { getBookings } from '@/services/bookings';
-import { getExpenses } from '@/services/expenses';
+import { getFirebaseAdmin } from '@/lib/firebase-admin';
 
 // 1. Translation Tool (Fully Functional)
 export const translateText = ai.defineTool(
@@ -153,7 +152,7 @@ export const googleSearch = ai.defineTool(
 );
 
 
-// 5. Property Database Report Tool (Requires Server-Side Functions)
+// 5. Property Database Report Tool (SERVER-SIDE IMPLEMENTATION)
 export const getPropertyDatabaseReport = ai.defineTool(
   {
     name: 'getPropertyDatabaseReport',
@@ -167,27 +166,29 @@ export const getPropertyDatabaseReport = ai.defineTool(
   async (input) => {
     console.log(`Generating database report from ${input.startDate} to ${input.endDate}`);
     
-    // NOTE: This will fail because getBookings and getExpenses are client-side.
-    // This needs to be refactored to use server-side data fetching.
     try {
-        const allBookings = await getBookings();
-        const allExpenses = await getExpenses();
-
+        const { adminDb } = await getFirebaseAdmin();
         const start = new Date(input.startDate);
         const end = new Date(input.endDate);
 
-        const relevantBookings = allBookings.filter(b => {
-            const bookingDate = new Date(b.checkinDate);
-            return bookingDate >= start && bookingDate <= end;
-        });
-
-        const relevantExpenses = allExpenses.filter(e => {
-            const expenseDate = new Date(e.date);
-            return expenseDate >= start && expenseDate <= end;
-        });
+        // Fetch bookings within the date range
+        const bookingsSnapshot = await adminDb.collection('bookings')
+            .where('checkinDate', '>=', input.startDate)
+            .where('checkinDate', '<=', input.endDate)
+            .get();
         
-        const totalRevenue = relevantBookings.reduce((acc, booking) => acc + booking.totalAmount, 0);
-        const totalExpenses = relevantExpenses.reduce((acc, expense) => acc + expense.amount, 0);
+        const relevantBookings = bookingsSnapshot.docs.map(doc => doc.data());
+
+        // Fetch expenses within the date range
+        const expensesSnapshot = await adminDb.collection('expenses')
+            .where('date', '>=', input.startDate)
+            .where('date', '<=', input.endDate)
+            .get();
+        
+        const relevantExpenses = expensesSnapshot.docs.map(doc => doc.data());
+        
+        const totalRevenue = relevantBookings.reduce((acc, booking) => acc + (booking.totalAmount || 0), 0);
+        const totalExpenses = relevantExpenses.reduce((acc, expense) => acc + (expense.amount || 0), 0);
         const netProfit = totalRevenue - totalExpenses;
 
         return `Report from ${input.startDate} to ${input.endDate}:
@@ -196,9 +197,9 @@ export const getPropertyDatabaseReport = ai.defineTool(
 - Net Profit: ₱${netProfit.toLocaleString()}
 - Number of Bookings: ${relevantBookings.length}`;
 
-    } catch (error) {
+    } catch (error: any) {
         console.error("Failed to generate database report:", error);
-        return "Sorry, I was unable to access the database to generate the report.";
+        return `Sorry, I was unable to access the database to generate the report. Error: ${error.message}`;
     }
   }
 );
