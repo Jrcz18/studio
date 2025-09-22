@@ -1,7 +1,7 @@
 
 'use client';
 
-import { useEffect, useState, useRef, useMemo } from 'react';
+import { useEffect, useState, useRef } from 'react';
 import Link from 'next/link';
 import { useAuth } from '@/hooks/use-auth.tsx';
 import { getUnreadNotifications } from '@/services/notifications';
@@ -11,10 +11,9 @@ import type { AppNotification } from '@/lib/types';
 
 const Header = () => {
   const [currentDate, setCurrentDate] = useState('');
-  const [notifications, setNotifications] = useState<AppNotification[]>([]);
+  const [notificationCount, setNotificationCount] = useState(0);
   const { user } = useAuth();
-  const fetchedInitialData = useRef(false);
-
+  const effectRan = useRef(false);
 
   useEffect(() => {
     const now = new Date();
@@ -25,47 +24,51 @@ const Header = () => {
       day: 'numeric',
     };
     setCurrentDate(now.toLocaleDateString('en-US', options));
-    
-    async function fetchInitialData() {
-        if(user && !fetchedInitialData.current) {
-            fetchedInitialData.current = true; // Prevents re-fetching
-            
-            // 1. Fetch notifications
-            const notificationsData = await getUnreadNotifications(user.uid);
-            setNotifications(notificationsData);
+  }, []);
 
-            // 2. Check for local events (once per day)
-            const lastChecked = localStorage.getItem('lastEventCheck');
-            const today = new Date().toISOString().split('T')[0];
-            if (lastChecked !== today) {
-              try {
-                  const events = await findLocalEvents({ location: 'Makati' });
-                  if (events) {
-                      await addNotification({
-                          userId: user.uid,
-                          type: 'event',
-                          title: 'Local Events Nearby!',
-                          description: 'Potential for booking surge. ' + events.split('\n')[1].trim().substring(2),
-                          isRead: false,
-                          createdAt: new Date().toISOString(),
-                      });
-                      localStorage.setItem('lastEventCheck', today);
-                  }
-              } catch (error) {
-                  console.error("Failed to check for local events:", error);
-              }
+  useEffect(() => {
+    // This effect runs when the user object becomes available.
+    // The effectRan ref ensures the async logic runs only once, even in Strict Mode.
+    if (user && !effectRan.current) {
+      const fetchInitialData = async () => {
+        // 1. Fetch notifications
+        const notificationsData = await getUnreadNotifications(user.uid);
+        setNotificationCount(notificationsData.length);
+
+        // 2. Check for local events (once per day)
+        const lastChecked = localStorage.getItem('lastEventCheck');
+        const today = new Date().toISOString().split('T')[0];
+        if (lastChecked !== today) {
+          try {
+            const events = await findLocalEvents({ location: 'Makati' });
+            if (events) {
+              await addNotification({
+                userId: user.uid,
+                type: 'event',
+                title: 'Local Events Nearby!',
+                description: 'Potential for booking surge. ' + events.split('\n')[1].trim().substring(2),
+                isRead: false,
+                createdAt: new Date().toISOString(),
+              });
+              localStorage.setItem('lastEventCheck', today);
+              // Refresh count after adding a new notification
+              setNotificationCount(prev => prev + 1);
             }
+          } catch (error) {
+            console.error("Failed to check for local events:", error);
+          }
         }
-    }
-    
-    fetchInitialData();
-    
-  }, [user]);
+      };
 
-  const notificationCount = useMemo(() => {
-    return notifications.length;
-  }, [notifications]);
-  
+      fetchInitialData();
+      
+      // Mark that the effect has run
+      effectRan.current = true;
+    }
+  // The dependency array is intentionally left empty for the cleanup function
+  // to correctly use the final state of `effectRan`. We handle the user dependency inside the effect.
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [user]);
 
   return (
     <header className="bg-yellow-400 shadow-md z-10" id="app-header">
