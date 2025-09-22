@@ -63,7 +63,7 @@ export function InvestorReportView({ report }: { report: any }) {
 
   return (
     <div className="prime-card p-4">
-        <div id="investor-report-content">
+        <div id="investor-report-content" className="print-area">
             <div className="text-center mb-6 border-b pb-4">
                 <h2 className="text-2xl font-bold text-gray-800">Monthly Investor Report</h2>
                 <p className="text-lg font-semibold text-gray-600">{report.investor.name}</p>
@@ -113,7 +113,7 @@ export function InvestorReportView({ report }: { report: any }) {
             </div>
 
         </div>
-        <div className="mt-6 border-t pt-4 flex justify-end">
+        <div className="mt-6 border-t pt-4 flex justify-end print-hide">
             <Button onClick={handlePrint} className="prime-button">Print Report</Button>
         </div>
     </div>

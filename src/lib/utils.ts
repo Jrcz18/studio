@@ -19,51 +19,10 @@ export function formatDate(dateString: string) {
   });
 }
 
-// In-memory cache for the CSS content
-let cssContent: string | null = null;
-let cssPromise: Promise<string> | null = null;
-
-/**
- * Fetches the app's global CSS content.
- * It fetches the content only once and caches it for subsequent calls.
- * This is safe for client-side use as it fetches a public asset.
- * @returns {Promise<string>} A promise that resolves to the CSS content.
- */
-async function getGlobalCss(): Promise<string> {
-  if (cssContent) {
-    return Promise.resolve(cssContent);
-  }
-  if (cssPromise) {
-    return cssPromise;
-  }
-
-  // In a Next.js app directory, `globals.css` is a public asset.
-  // This fetch request will work in both development and production/static builds.
-  cssPromise = fetch('/globals.css')
-    .then(response => {
-      if (!response.ok) {
-        throw new Error('Network response was not ok');
-      }
-      return response.text();
-    })
-    .then(text => {
-      cssContent = text;
-      cssPromise = null; // Clear promise after resolution
-      return text;
-    })
-    .catch(error => {
-      console.error("Failed to fetch globals.css:", error);
-      cssPromise = null; // Clear promise on failure
-      return ""; // Return empty string on failure
-    });
-  
-  return cssPromise;
-}
-
 
 /**
  * Opens a new window and prints the content of a DOM element.
- * It dynamically includes the app's global styles for accurate rendering.
+ * It now relies on `@media print` styles in `globals.css`.
  * @param {object} params - The parameters for printing.
  * @param {string} params.contentId - The ID of the DOM element to print.
  * @param {string} params.title - The title of the print window.
@@ -75,7 +34,10 @@ export function printContent({ contentId, title }: { contentId: string; title: s
     return;
   }
   
-  const contentHtml = contentElement.innerHTML;
+  // Clone the node to avoid manipulating the original DOM
+  const contentToPrint = contentElement.cloneNode(true) as HTMLElement;
+  contentToPrint.classList.add('print-content');
+
   const printWindow = window.open('', '_blank', 'height=800,width=800');
 
   if (printWindow) {
@@ -83,25 +45,24 @@ export function printContent({ contentId, title }: { contentId: string; title: s
       <html>
         <head>
           <title>${title}</title>
+          <link rel="stylesheet" href="/globals.css">
+           <style>
+             /* Additional print-specific overrides if needed */
+             body { margin: 0; }
+           </style>
         </head>
-        <body class="p-8">
-          ${contentHtml}
+        <body>
+          ${contentToPrint.outerHTML}
         </body>
       </html>
     `);
 
-    getGlobalCss().then(css => {
-      const styleEl = printWindow.document.createElement('style');
-      styleEl.textContent = css;
-      printWindow.document.head.appendChild(styleEl);
-      
-      // Allow styles to apply before printing
-      setTimeout(() => {
-        printWindow.document.close(); // Important for some browsers
-        printWindow.focus(); // Important for some browsers
+    // The load event ensures styles are applied before printing
+    printWindow.addEventListener('load', () => {
+        printWindow.document.close();
+        printWindow.focus(); 
         printWindow.print();
         printWindow.close();
-      }, 500); 
-    });
+    }, true);
   }
 }

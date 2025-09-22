@@ -55,7 +55,7 @@ export function AgentReportView({ report }: { report: any }) {
 
   return (
     <div className="prime-card p-4">
-        <div id="agent-report-content">
+        <div id="agent-report-content" className="print-area">
             <div className="text-center mb-6 border-b pb-4">
                 <h2 className="text-2xl font-bold text-gray-800">Monthly Agent Performance</h2>
                 <p className="text-lg font-semibold text-gray-600">{report.agent.name}</p>
@@ -121,7 +121,7 @@ export function AgentReportView({ report }: { report: any }) {
                 ) : <p className="text-sm text-gray-500">No bookings for this month.</p>}
             </div>
         </div>
-        <div className="mt-6 border-t pt-4 flex justify-end">
+        <div className="mt-6 border-t pt-4 flex justify-end print-hide">
             <Button onClick={handlePrint} className="prime-button">Print Report</Button>
         </div>
     </div>
