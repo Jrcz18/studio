@@ -4,13 +4,19 @@
 import React, { useEffect, useState, useCallback } from 'react';
 import { useAuth } from '@/hooks/use-auth';
 import type { AppNotification } from '@/lib/types';
-import { getAllNotifications, markAllNotificationsAsRead, deleteNotification, addNotification } from '@/services/notifications';
+import { getAllNotifications, markAllNotificationsAsRead, deleteNotification, markNotificationAsRead } from '@/services/notifications';
 import { Button } from '@/components/ui/button';
 import { Bell, Calendar, DollarSign, CheckCircle, X } from 'lucide-react';
 import { formatDate } from '@/lib/utils';
 import { cn } from '@/lib/utils';
 import { useToast } from '@/hooks/use-toast';
-import { findLocalEvents } from '@/ai/tools';
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogDescription,
+} from '@/components/ui/dialog';
 
 const iconMap: Record<AppNotification['type'], React.ReactNode> = {
     booking: <Calendar className="w-5 h-5 text-blue-500" />,
@@ -25,6 +31,8 @@ export default function NotificationsPage() {
     const [notifications, setNotifications] = useState<AppNotification[]>([]);
     const [loading, setLoading] = useState(true);
     const { toast } = useToast();
+    const [selectedNotification, setSelectedNotification] = useState<AppNotification | null>(null);
+    const [isDetailOpen, setIsDetailOpen] = useState(false);
 
     const fetchNotifications = useCallback(async () => {
         if (user) {
@@ -38,34 +46,8 @@ export default function NotificationsPage() {
     }, [user]);
 
     useEffect(() => {
-        if (user) {
-            const checkEventsAndFetch = async () => {
-                const lastChecked = localStorage.getItem('lastEventCheck');
-                const today = new Date().toISOString().split('T')[0];
-
-                if (lastChecked !== today) {
-                    try {
-                        const events = await findLocalEvents({ location: 'Makati' });
-                        if (events) {
-                        await addNotification({
-                            userId: user.uid,
-                            type: 'event',
-                            title: 'Local Events Nearby!',
-                            description: 'Potential for booking surge. ' + events.split('\n')[1].trim().substring(2),
-                            isRead: false,
-                            createdAt: new Date().toISOString(),
-                        });
-                        localStorage.setItem('lastEventCheck', today);
-                        }
-                    } catch (error) {
-                        console.error("Failed to check for local events:", error);
-                    }
-                }
-                fetchNotifications();
-            }
-            checkEventsAndFetch();
-        }
-    }, [user, fetchNotifications]);
+        fetchNotifications();
+    }, [fetchNotifications]);
 
     
     const handleMarkAllAsRead = async () => {
@@ -97,11 +79,12 @@ export default function NotificationsPage() {
         }
     };
     
-    const markAsRead = async (notificationId: string) => {
-        const notification = notifications.find(n => n.id === notificationId);
-        if (notification && !notification.isRead) {
-            await markAllNotificationsAsRead(notificationId);
-            setNotifications(prev => prev.map(n => n.id === notificationId ? {...n, isRead: true} : n));
+    const handleNotificationClick = async (notification: AppNotification) => {
+        setSelectedNotification(notification);
+        setIsDetailOpen(true);
+        if (!notification.isRead) {
+            await markNotificationAsRead(notification.id!);
+            setNotifications(prev => prev.map(n => n.id === notification.id ? {...n, isRead: true} : n));
         }
     }
 
@@ -128,7 +111,7 @@ export default function NotificationsPage() {
                     notifications.map(notification => (
                         <div
                             key={notification.id}
-                            onClick={() => markAsRead(notification.id!)}
+                            onClick={() => handleNotificationClick(notification)}
                             className={cn(
                                 "prime-card block relative p-4 flex items-start space-x-4 cursor-pointer transition-colors",
                                 notification.isRead ? 'bg-white' : 'bg-yellow-50 border-yellow-200'
@@ -151,7 +134,7 @@ export default function NotificationsPage() {
                             <div className="flex-1 pr-6">
                                 <p className="font-semibold text-gray-800">{notification.title}</p>
                                 <p className="text-sm text-gray-600 line-clamp-2">{notification.description}</p>
-                                <p className="text-xs text-gray-400 mt-1">{formatDate(notification.createdAt)}</p>
+                                <p className="text-xs text-gray-400 mt-1">{notification.createdAt ? formatDate(notification.createdAt) : ''}</p>
                             </div>
                             {!notification.isRead && (
                                 <div className="w-2.5 h-2.5 bg-blue-500 rounded-full self-center flex-shrink-0 mr-2" aria-label="Unread"></div>
@@ -166,7 +149,27 @@ export default function NotificationsPage() {
                     </div>
                 )}
             </div>
+             <Dialog open={isDetailOpen} onOpenChange={setIsDetailOpen}>
+                <DialogContent>
+                    <DialogHeader>
+                        <DialogTitle>{selectedNotification?.title}</DialogTitle>
+                        <DialogDescription>
+                            {selectedNotification?.createdAt ? formatDate(selectedNotification.createdAt) : ''}
+                        </DialogDescription>
+                    </DialogHeader>
+                    <div className="py-4">
+                        <p>{selectedNotification?.description}</p>
+                        {selectedNotification?.data && (
+                             <div className="mt-4 border-t pt-4">
+                                <h4 className="font-semibold mb-2">Details</h4>
+                                <pre className="text-xs bg-gray-100 p-2 rounded-md overflow-x-auto">
+                                    {JSON.stringify(selectedNotification.data, null, 2)}
+                                </pre>
+                            </div>
+                        )}
+                    </div>
+                </DialogContent>
+            </Dialog>
         </div>
     );
 }
-
