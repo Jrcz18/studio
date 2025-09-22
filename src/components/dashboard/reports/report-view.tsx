@@ -1,7 +1,7 @@
 
 'use client';
 
-import { formatDate } from '@/lib/utils';
+import { formatDate, printContent } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
 import { generateReportSummary, ReportSummaryInput } from '@/ai/flows/report-summary';
 import { useEffect, useState } from 'react';
@@ -14,6 +14,7 @@ export function ReportView({ report }: { report: any }) {
     if (report) {
       handleGenerateSummary();
     }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [report]);
 
   const handleGenerateSummary = async () => {
@@ -40,26 +41,14 @@ export function ReportView({ report }: { report: any }) {
     }
   };
 
-  if (!report) return null;
-
   const handlePrint = () => {
-    const printContent = document.getElementById('report-content')?.innerHTML;
-    const printWindow = window.open('', '_blank', 'height=800,width=800');
-    if (printWindow) {
-        const fileName = `${report.unit.name.replace(/ /g, '_')}_${report.month}_${report.year}`;
-        printWindow.document.write(`<html><head><title>${fileName}</title>`);
-        printWindow.document.write('<script src="https://cdn.tailwindcss.com"></script>');
-        printWindow.document.write('<style>body { -webkit-print-color-adjust: exact; font-family: sans-serif; }</style>');
-        printWindow.document.write('</head><body class="p-8">');
-        printWindow.document.write(printContent || '');
-        printWindow.document.write('</body></html>');
-        printWindow.document.close();
-        
-        setTimeout(() => { // Timeout to allow content to load
-            printWindow.print();
-        }, 500);
-    }
-  }
+    printContent({
+      contentId: 'report-content',
+      title: `${report.unit.name.replace(/ /g, '_')}_${report.month}_${report.year}`
+    });
+  };
+
+  if (!report) return null;
 
   return (
     <div className="prime-card p-4">

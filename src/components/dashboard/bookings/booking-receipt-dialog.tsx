@@ -13,6 +13,8 @@ import {
 import { Button } from '@/components/ui/button';
 import { useEffect, useState } from 'react';
 import { getReceiptSettings } from '@/services/receipt-settings';
+import { printContent } from '@/lib/utils';
+
 
 export function BookingReceiptDialog({
   bookingId,
@@ -63,7 +65,7 @@ export function BookingReceiptDialog({
   const wifiPassword = unit?.wifiPassword || settings?.wifiPassword;
 
   const receiptContent = (
-    <div id="receiptContent" className="space-y-4 p-4">
+    <div id={`receipt-content-${booking.id}`} className="space-y-4 p-4">
         {loading ? (
             <div className="text-center p-8">Loading receipt details...</div>
         ) : (
@@ -163,48 +165,22 @@ export function BookingReceiptDialog({
   );
 
   const handlePrint = () => {
-    const printWindow = window.open('', '_blank');
-    if (printWindow) {
-      const receiptHtml = document.getElementById('receiptContent')?.innerHTML;
-      printWindow.document.write(`
-          <html>
-              <head>
-                  <title>Booking Receipt</title>
-                  <script src="https://cdn.tailwindcss.com"><\/script>
-                  <style>
-                      body { font-family: Arial, sans-serif; padding: 20px; }
-                      .gradient-bg {
-                          background: linear-gradient(135deg, #FFD700 0%, #F4C430 100%);
-                      }
-                      .prime-button {
-                        background: #FFD700;
-                        color: #000000;
-                        border: none;
-                        border-radius: 8px;
-                        font-weight: 600;
-                        padding: 12px;
-                        transition: all 0.2s ease;
-                      }
-                  </style>
-              </head>
-              <body>
-                  ${receiptHtml}
-              </body>
-          </html>
-      `);
-      printWindow.document.close();
-      printWindow.print();
-    }
+    printContent({
+      contentId: `receipt-content-${booking.id}`,
+      title: `Booking_Receipt_${booking.guestFirstName}_${booking.guestLastName}`
+    });
   };
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-md max-h-[80vh] overflow-y-auto">
-        <DialogHeader>
+      <DialogContent className="sm:max-w-md max-h-[80vh] overflow-y-auto p-0">
+        <DialogHeader className="p-6 pb-0">
           <DialogTitle>Booking Receipt</DialogTitle>
         </DialogHeader>
-        {receiptContent}
-        <DialogFooter>
+        <div className="overflow-y-auto">
+          {receiptContent}
+        </div>
+        <DialogFooter className="p-6 pt-0">
           <Button variant="outline" onClick={() => onOpenChange(false)}>Close</Button>
           <Button onClick={handlePrint} className="prime-button">
               🖨️ Print
