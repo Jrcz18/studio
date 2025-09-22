@@ -1,4 +1,14 @@
-import { AuthGate } from '@/components/auth/auth-gate';
+
+'use client';
+
+import dynamic from 'next/dynamic';
+
+// Dynamically import AuthGate and disable SSR
+const AuthGate = dynamic(() => import('@/components/auth/auth-gate').then(mod => mod.AuthGate), {
+  ssr: false,
+  loading: () => <div className="text-center p-4"><p>Loading...</p></div>,
+});
+
 
 export default function Home() {
   return (
