@@ -1,14 +1,13 @@
 
-'use server';
+'use client';
 /**
- * @fileOverview A flow to send an email notification to the building admin for a new booking.
+ * @fileOverview Client-side function to send an email notification to the building admin by calling a backend API.
  *
- * - sendAdminBookingNotification - A function that triggers the admin notification.
+ * - sendAdminBookingNotification - Triggers the admin notification via the backend.
  * - AdminNotificationInput - The input type for the notification function.
  */
 
-import { ai } from '@/ai/genkit';
-import { z } from 'genkit';
+import { z } from 'zod';
 
 const AdminNotificationInputSchema = z.object({
   guestName: z.string(),
@@ -18,65 +17,25 @@ const AdminNotificationInputSchema = z.object({
   checkoutDate: z.string(),
   unitName: z.string(),
 });
-export type AdminNotificationInput = z.infer<
-  typeof AdminNotificationInputSchema
->;
+export type AdminNotificationInput = z.infer<typeof AdminNotificationInputSchema>;
 
 const AdminNotificationOutputSchema = z.object({
   message: z.string(),
 });
-export type AdminNotificationOutput = z.infer<
-  typeof AdminNotificationOutputSchema
->;
+export type AdminNotificationOutput = z.infer<typeof AdminNotificationOutputSchema>;
 
-export async function sendAdminBookingNotification(
-  input: AdminNotificationInput
-): Promise<AdminNotificationOutput> {
-  // You should replace this with a secure way to get the admin email,
-  // like from environment variables or a config service.
-  const ADMIN_EMAIL = 'admin@example.com';
 
-  const sendAdminNotificationFlow = ai.defineFlow(
-    {
-      name: 'sendAdminNotificationFlow',
-      inputSchema: AdminNotificationInputSchema,
-      outputSchema: AdminNotificationOutputSchema,
-    },
-    async (input) => {
-      // In a real application, you would integrate with an email service like SendGrid, Mailgun, or Resend.
-      // For this example, we will simulate the email sending process by logging the content.
+const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL;
 
-      const emailSubject = `New Guest Arrival Notice: ${input.guestName} for Unit ${input.unitName}`;
-
-      const emailBody = `
-      <p>Dear Building Administration,</p>
-      <p>Please be advised of a new guest arrival for Unit ${input.unitName}.</p>
-      <p><strong>Guest Details:</strong></p>
-      <ul>
-        <li><strong>Name:</strong> ${input.guestName}</li>
-        <li><strong>Contact Number:</strong> ${input.guestContact}</li>
-        <li><strong>Total Guests:</strong> ${input.numberOfGuests}</li>
-        <li><strong>Check-in Date:</strong> ${input.checkinDate}</li>
-        <li><strong>Check-out Date:</strong> ${input.checkoutDate}</li>
-      </ul>
-      <p>Please facilitate their check-in process accordingly.</p>
-      <p>Thank you,<br>Manila Prime Property Management</p>
-    `;
-
-      console.log('--- SIMULATING EMAIL SEND ---');
-      console.log(`To: ${ADMIN_EMAIL}`);
-      console.log(`Subject: ${emailSubject}`);
-      console.log(`Body: ${emailBody}`);
-      console.log('-----------------------------');
-
-      // Here you would add the actual email sending logic:
-      // await sendEmail({ to: ADMIN_EMAIL, subject: emailSubject, html: emailBody });
-
-      return {
-        message: `Successfully sent notification for ${input.guestName} to ${ADMIN_EMAIL}`,
-      };
+export async function sendAdminBookingNotification(input: AdminNotificationInput): Promise<AdminNotificationOutput> {
+    const res = await fetch(`${API_BASE_URL}/sendAdminBookingNotification`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(input),
+    });
+    if (!res.ok) {
+        const error = await res.json();
+        throw new Error(error.message || 'Request failed');
     }
-  );
-
-  return sendAdminNotificationFlow(input);
+    return res.json();
 }

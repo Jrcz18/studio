@@ -1,21 +1,16 @@
 
-'use server';
+'use client';
 /**
- * @fileOverview A flow to suggest a resolution for a booking conflict.
+ * @fileOverview Client-side function to suggest a resolution for a booking conflict by calling a backend API.
  *
- * - suggestConflictResolution - A function that suggests a resolution for a booking conflict.
- * - ConflictResolutionInput - The input type for the suggestConflictResolution function.
- * - ConflictResolutionOutput - The return type for the suggestConflictResolution function.
+ * - suggestConflictResolution - Calls the backend to suggest a resolution for a booking conflict.
+ * - ConflictResolutionInput - The input type for the function.
+ * - ConflictResolutionOutput - The return type for the function.
  */
 
-import { ai } from '@/ai/genkit';
-import { z } from 'genkit';
+import { z } from 'zod';
 
-export async function suggestConflictResolution(
-  input: z.infer<typeof ConflictResolutionInputSchema>
-): Promise<z.infer<typeof ConflictResolutionOutputSchema>> {
-  
-  const BookingDetailsSchema = z.object({
+const BookingDetailsSchema = z.object({
     id: z.string().optional(),
     guestName: z.string(),
     checkinDate: z.string(),
@@ -24,54 +19,32 @@ export async function suggestConflictResolution(
     createdAt: z.string(),
   });
 
-  const ConflictResolutionInputSchema = z.object({
+const ConflictResolutionInputSchema = z.object({
     existingBooking: BookingDetailsSchema.describe('The booking that already exists in the calendar.'),
     newBooking: BookingDetailsSchema.describe('The new booking that is causing the conflict.'),
     unitName: z.string().describe('The name of the unit with the booking conflict.'),
   });
 
-  const ConflictResolutionOutputSchema = z.object({
+const ConflictResolutionOutputSchema = z.object({
     suggestion: z.string().describe('The suggested course of action to resolve the conflict.'),
     suggestedAction: z.enum(['keep_existing', 'prioritize_new', 'offer_alternative']).describe('A machine-readable suggested action.'),
-  });
-  
-  const resolveConflictPrompt = ai.definePrompt({
-    name: 'resolveConflictPrompt',
-    input: { schema: ConflictResolutionInputSchema },
-    output: { schema: ConflictResolutionOutputSchema },
-    prompt: `You are an expert property manager AI specializing in conflict resolution. Analyze the following booking conflict for the unit "{{unitName}}" and suggest the best course of action.
+});
 
-    Existing Booking:
-    - Guest: {{existingBooking.guestName}}
-    - Dates: {{existingBooking.checkinDate}} to {{existingBooking.checkoutDate}}
-    - Value: ₱{{existingBooking.totalAmount}}
-    - Booked On: {{existingBooking.createdAt}}
+export type BookingDetails = z.infer<typeof BookingDetailsSchema>;
+export type ConflictResolutionInput = z.infer<typeof ConflictResolutionInputSchema>;
+export type ConflictResolutionOutput = z.infer<typeof ConflictResolutionOutputSchema>;
 
-    New Conflicting Booking:
-    - Guest: {{newBooking.guestName}}
-    - Dates: {{newBooking.checkinDate}} to {{newBooking.checkoutDate}}
-    - Value: ₱{{newBooking.totalAmount}}
-    - Booked On: {{newBooking.createdAt}}
+const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL;
 
-    Prioritize the booking that is more valuable (higher total amount, longer stay). Also consider which booking was made first. Provide a concise, actionable suggestion for the property manager. For example, suggest contacting one guest to offer a different unit or a discount to reschedule. Then, set the 'suggestedAction' field based on your analysis: 'keep_existing' if the old booking is clearly better, 'prioritize_new' if the new one is much more valuable, or 'offer_alternative' if a compromise is best.`,
-  });
-
-  const resolveConflictFlow = ai.defineFlow(
-    {
-      name: 'resolveConflictFlow',
-      inputSchema: ConflictResolutionInputSchema,
-      outputSchema: ConflictResolutionOutputSchema,
-    },
-    async (input) => {
-      const { output } = await resolveConflictPrompt(input);
-      return output!;
+export async function suggestConflictResolution(input: ConflictResolutionInput): Promise<ConflictResolutionOutput> {
+    const res = await fetch(`${API_BASE_URL}/resolveConflict`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(input),
+    });
+    if (!res.ok) {
+        const error = await res.json();
+        throw new Error(error.message || 'Request failed');
     }
-  );
-
-  return resolveConflictFlow(input);
+    return res.json();
 }
-
-export type BookingDetails = z.infer<typeof import('./resolve-conflict').suggestConflictResolution extends (input: any) => Promise<infer O> ? O extends {existingBooking: any} ? O['existingBooking'] : never : never>;
-export type ConflictResolutionInput = z.infer<typeof import('./resolve-conflict').suggestConflictResolution extends (input: infer I) => any ? I : never>;
-export type ConflictResolutionOutput = z.infer<typeof import('./resolve-conflict').suggestConflictResolution extends (input: any) => Promise<infer O> ? O : never>;
-

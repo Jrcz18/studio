@@ -1,20 +1,16 @@
 
-'use server';
+'use client';
 /**
- * @fileOverview Generates a concise summary for an agent's monthly report.
+ * @fileOverview Client-side function to generate a concise summary for an agent's monthly report by calling a backend API.
  *
- * - generateAgentReportSummary - A function that generates the agent report summary.
+ * - generateAgentReportSummary - A function that calls the backend to generate the agent report summary.
  * - AgentReportSummaryInput - The input type for the generateAgentReportSummary function.
  * - AgentReportSummaryOutput - The return type for the generateAgentReportSummary function.
  */
 
-import { ai } from '@/ai/genkit';
-import { z } from 'genkit';
+import { z } from 'zod';
 
-export async function generateAgentReportSummary(
-  input: z.infer<typeof AgentReportSummaryInputSchema>
-): Promise<z.infer<typeof AgentReportSummaryOutputSchema>> {
-  const AgentReportSummaryInputSchema = z.object({
+const AgentReportSummaryInputSchema = z.object({
     agentName: z.string().describe('The name of the agent.'),
     month: z.string().describe('The month of the report (e.g., "January").'),
     year: z.number().describe('The year of the report (e.g., 2024).'),
@@ -29,7 +25,7 @@ export async function generateAgentReportSummary(
       .describe('The total commission earned by the agent.'),
   });
 
-  const AgentReportSummaryOutputSchema = z.object({
+const AgentReportSummaryOutputSchema = z.object({
     summary: z
       .string()
       .describe(
@@ -37,37 +33,20 @@ export async function generateAgentReportSummary(
       ),
   });
 
-  const reportSummaryPrompt = ai.definePrompt({
-    name: 'agentReportSummaryPrompt',
-    input: { schema: AgentReportSummaryInputSchema },
-    output: { schema: AgentReportSummaryOutputSchema },
-    prompt: `You are a performance analyst AI for a property management company.
-    
-    Generate a brief, insightful summary for the monthly performance report of agent {{agentName}} for {{month}} {{year}}.
+export type AgentReportSummaryInput = z.infer<typeof AgentReportSummaryInputSchema>;
+export type AgentReportSummaryOutput = z.infer<typeof AgentReportSummaryOutputSchema>;
 
-    The performance data is as follows:
-    - Total Bookings: {{totalBookings}}
-    - Total Revenue Generated: ₱{{totalRevenueGenerated}}
-    - Total Commission Earned: ₱{{totalCommission}}
+const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL;
 
-    Provide a one or two-sentence summary highlighting the agent's performance. Comment on their contribution to revenue and whether it was a productive month for them. The tone should be professional and encouraging.
-    `,
-  });
-
-  const generateReportSummaryFlow = ai.defineFlow(
-    {
-      name: 'generateAgentReportSummaryFlow',
-      inputSchema: AgentReportSummaryInputSchema,
-      outputSchema: AgentReportSummaryOutputSchema,
-    },
-    async (input) => {
-      const { output } = await reportSummaryPrompt(input);
-      return output!;
+export async function generateAgentReportSummary(input: AgentReportSummaryInput): Promise<AgentReportSummaryOutput> {
+    const res = await fetch(`${API_BASE_URL}/generateAgentReportSummary`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(input),
+    });
+    if (!res.ok) {
+        const error = await res.json();
+        throw new Error(error.message || 'Request failed');
     }
-  );
-
-  return generateReportSummaryFlow(input);
+    return res.json();
 }
-
-export type AgentReportSummaryInput = z.infer<typeof import('./agent-report-summary').generateAgentReportSummary extends (input: infer I, ...args: any[]) => any ? I : never>;
-export type AgentReportSummaryOutput = z.infer<typeof import('./agent-report-summary').generateAgentReportSummary extends (...args: any[]) => Promise<infer O> ? O : never>;

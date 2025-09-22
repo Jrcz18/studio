@@ -23,22 +23,7 @@ import {
 } from '@/components/ui/select';
 import { Textarea } from '@/components/ui/textarea';
 import { useToast } from '@/hooks/use-toast';
-import type { ExpenseAnalysisInput, ExpenseAnalysisOutput } from '@/ai/flows/expense-analyzer';
-
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL;
-
-async function analyzeExpense(input: ExpenseAnalysisInput): Promise<ExpenseAnalysisOutput> {
-    const res = await fetch(`${API_BASE_URL}/analyzeExpense`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(input),
-    });
-    if (!res.ok) {
-        const error = await res.json();
-        throw new Error(error.message || 'Request failed');
-    }
-    return res.json();
-}
+import { analyzeExpense, type ExpenseAnalysisInput } from '@/ai/flows/expense-analyzer';
 
 
 export function AddExpenseDialog({

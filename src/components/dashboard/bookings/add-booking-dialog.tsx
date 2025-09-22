@@ -23,23 +23,7 @@ import {
 } from '@/components/ui/select';
 import { Textarea } from '@/components/ui/textarea';
 import { Checkbox } from '@/components/ui/checkbox';
-import type { AdminNotificationInput } from '@/ai/flows/send-admin-notification';
-
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL;
-
-async function sendAdminBookingNotification(input: AdminNotificationInput): Promise<any> {
-    const res = await fetch(`${API_BASE_URL}/sendAdminNotification`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(input),
-    });
-    if (!res.ok) {
-        const error = await res.json();
-        throw new Error(error.message || 'Request failed');
-    }
-    return res.json();
-}
-
+import { sendAdminBookingNotification } from '@/ai/flows/send-admin-notification';
 
 export function AddBookingDialog({
   children,

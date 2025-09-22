@@ -4,23 +4,8 @@
 import { formatDate, printContent } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
 import { useEffect, useState } from 'react';
-import type { InvestorReportSummaryInput } from '@/ai/flows/investor-report-summary';
+import { generateInvestorReportSummary, type InvestorReportSummaryInput } from '@/ai/flows/investor-report-summary';
 
-
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL;
-
-async function generateInvestorReportSummary(input: InvestorReportSummaryInput): Promise<{ summary: string }> {
-    const res = await fetch(`${API_BASE_URL}/generateInvestorReportSummary`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(input),
-    });
-    if (!res.ok) {
-        const error = await res.json();
-        throw new Error(error.message || 'Request failed');
-    }
-    return res.json();
-}
 
 export function InvestorReportView({ report }: { report: any }) {
   const [summary, setSummary] = useState('');

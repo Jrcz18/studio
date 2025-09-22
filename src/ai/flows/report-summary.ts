@@ -1,64 +1,42 @@
 
-'use server';
+'use client';
 /**
- * @fileOverview Generates a concise summary for a financial report.
+ * @fileOverview Client-side function to generate a concise summary for a financial report by calling a backend API.
  *
- * - generateReportSummary - A function that generates the report summary.
- * - ReportSummaryInput - The input type for the generateReportSummary function.
- * - ReportSummaryOutput - The return type for the generateReportSummary function.
+ * - generateReportSummary - Calls the backend to generate the report summary.
+ * - ReportSummaryInput - The input type for the function.
+ * - ReportSummaryOutput - The return type for the function.
  */
 
-import {ai} from '@/ai/genkit';
-import {z} from 'genkit';
+import { z } from 'zod';
 
-export async function generateReportSummary(
-  input: z.infer<typeof ReportSummaryInputSchema>
-): Promise<z.infer<typeof ReportSummaryOutputSchema>> {
-  const ReportSummaryInputSchema = z.object({
+const ReportSummaryInputSchema = z.object({
     unitName: z.string().describe('The name of the rental unit or "All Units".'),
     month: z.string().describe('The month of the report (e.g., "January").'),
     year: z.number().describe('The year of the report (e.g., 2024).'),
     totalRevenue: z.number().describe('The total revenue for the month.'),
     totalExpenses: z.number().describe('The total expenses for the month.'),
     netProfit: z.number().describe('The net profit for the month.'),
-  });
+});
 
-  const ReportSummaryOutputSchema = z.object({
+const ReportSummaryOutputSchema = z.object({
     summary: z.string().describe('A concise, insightful summary of the monthly report.'),
-  });
-  
-  const reportSummaryPrompt = ai.definePrompt({
-    name: 'reportSummaryPrompt',
-    input: {schema: ReportSummaryInputSchema},
-    output: {schema: ReportSummaryOutputSchema},
-    prompt: `You are a financial analyst AI for a property management company.
-    
-    Generate a brief, insightful summary for the monthly report of {{unitName}} for {{month}} {{year}}.
+});
 
-    The financial data is as follows:
-    - Total Revenue: ₱{{totalRevenue}}
-    - Total Expenses: ₱{{totalExpenses}}
-    - Net Profit: ₱{{netProfit}}
+export type ReportSummaryInput = z.infer<typeof ReportSummaryInputSchema>;
+export type ReportSummaryOutput = z.infer<typeof ReportSummaryOutputSchema>;
 
-    Provide a one or two-sentence summary highlighting the key performance aspect (e.g., strong profitability, high expenses, a loss, etc.). The tone should be professional and informative.
-    `,
-  });
+const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL;
 
-  const generateReportSummaryFlow = ai.defineFlow(
-    {
-      name: 'generateReportSummaryFlow',
-      inputSchema: ReportSummaryInputSchema,
-      outputSchema: ReportSummaryOutputSchema,
-    },
-    async input => {
-      const {output} = await reportSummaryPrompt(input);
-      return output!;
+export async function generateReportSummary(input: ReportSummaryInput): Promise<ReportSummaryOutput> {
+    const res = await fetch(`${API_BASE_URL}/generateReportSummary`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(input),
+    });
+    if (!res.ok) {
+        const error = await res.json();
+        throw new Error(error.message || 'Request failed');
     }
-  );
-
-  return generateReportSummaryFlow(input);
+    return res.json();
 }
-
-
-export type ReportSummaryInput = z.infer<typeof import('./report-summary').generateReportSummary extends (input: infer I, ...args: any[]) => any ? I : never>;
-export type ReportSummaryOutput = z.infer<typeof import('./report-summary').generateReportSummary extends (...args: any[]) => Promise<infer O> ? O : never>;
