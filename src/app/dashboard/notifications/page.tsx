@@ -8,7 +8,6 @@ import { getAllNotifications, markNotificationAsRead, markAllNotificationsAsRead
 import { Button } from '@/components/ui/button';
 import { Bell, Calendar, DollarSign, CheckCircle, X } from 'lucide-react';
 import { formatDate } from '@/lib/utils';
-import { useRouter } from 'next/navigation';
 import { cn } from '@/lib/utils';
 import { useToast } from '@/hooks/use-toast';
 import {
@@ -31,7 +30,6 @@ const iconMap: Record<AppNotification['type'], React.ReactNode> = {
 
 export default function NotificationsPage() {
     const { user } = useAuth();
-    const router = useRouter();
     const [notifications, setNotifications] = useState<AppNotification[]>([]);
     const [loading, setLoading] = useState(true);
     const { toast } = useToast();
