@@ -32,15 +32,6 @@ export default function NotificationDetailClient({ notification }: { notificatio
 
     return (
         <div className="p-4">
-            <div className="flex items-center mb-6">
-                <Link href="/dashboard/notifications" className="mr-4 p-2 rounded-full hover:bg-gray-100">
-                   <ArrowLeft className="w-5 h-5" />
-                </Link>
-                <div>
-                    <h2 className="text-xl font-bold text-gray-900">Notification Details</h2>
-                </div>
-            </div>
-
             <div className="prime-card p-6">
                 <div className="flex items-start space-x-4">
                      <div className="w-16 h-16 rounded-full bg-gray-100 flex items-center justify-center flex-shrink-0">
