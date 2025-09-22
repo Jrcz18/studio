@@ -4,7 +4,7 @@
 import React, { useEffect, useState, useCallback } from 'react';
 import { useAuth } from '@/hooks/use-auth';
 import type { AppNotification } from '@/lib/types';
-import { getAllNotifications, markNotificationAsRead, markAllNotificationsAsRead, deleteNotification } from '@/services/notifications';
+import { getAllNotifications, markNotificationAsRead, markAllNotificationsAsRead, deleteNotification, addNotification } from '@/services/notifications';
 import { Button } from '@/components/ui/button';
 import { Bell, Calendar, DollarSign, CheckCircle, X } from 'lucide-react';
 import { formatDate } from '@/lib/utils';
@@ -18,6 +18,7 @@ import {
   DialogTitle,
 } from '@/components/ui/dialog';
 import NotificationDetailClient from '@/components/dashboard/notifications/notification-detail-client';
+import { findLocalEvents } from '@/ai/tools';
 
 
 const iconMap: Record<AppNotification['type'], React.ReactNode> = {
@@ -49,8 +50,35 @@ export default function NotificationsPage() {
     }, [user]);
 
     useEffect(() => {
-        fetchNotifications();
-    }, [fetchNotifications, user]);
+        if (user) {
+            const checkEventsAndFetch = async () => {
+                const lastChecked = localStorage.getItem('lastEventCheck');
+                const today = new Date().toISOString().split('T')[0];
+
+                if (lastChecked !== today) {
+                    try {
+                        const events = await findLocalEvents({ location: 'Makati' });
+                        if (events) {
+                        await addNotification({
+                            userId: user.uid,
+                            type: 'event',
+                            title: 'Local Events Nearby!',
+                            description: 'Potential for booking surge. ' + events.split('\n')[1].trim().substring(2),
+                            isRead: false,
+                            createdAt: new Date().toISOString(),
+                        });
+                        localStorage.setItem('lastEventCheck', today);
+                        }
+                    } catch (error) {
+                        console.error("Failed to check for local events:", error);
+                    }
+                }
+                // Finally, fetch all notifications including any new one
+                fetchNotifications();
+            }
+            checkEventsAndFetch();
+        }
+    }, [user, fetchNotifications]);
 
     const handleNotificationClick = async (notification: AppNotification) => {
         if (!notification.isRead) {

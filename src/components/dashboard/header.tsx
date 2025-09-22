@@ -1,19 +1,11 @@
 
 'use client';
 
-import { useEffect, useState, useRef } from 'react';
+import { useEffect, useState } from 'react';
 import Link from 'next/link';
-import { useAuth } from '@/hooks/use-auth.tsx';
-import { getUnreadNotifications } from '@/services/notifications';
-import { addNotification } from '@/services/notifications';
-import { findLocalEvents } from '@/ai/tools';
-import type { AppNotification } from '@/lib/types';
 
 const Header = () => {
   const [currentDate, setCurrentDate] = useState('');
-  const [notificationCount, setNotificationCount] = useState(0);
-  const { user } = useAuth();
-  const effectRan = useRef(false);
 
   useEffect(() => {
     const now = new Date();
@@ -25,50 +17,6 @@ const Header = () => {
     };
     setCurrentDate(now.toLocaleDateString('en-US', options));
   }, []);
-
-  useEffect(() => {
-    // This effect runs when the user object becomes available.
-    // The effectRan ref ensures the async logic runs only once, even in Strict Mode.
-    if (user && !effectRan.current) {
-      const fetchInitialData = async () => {
-        // 1. Fetch notifications
-        const notificationsData = await getUnreadNotifications(user.uid);
-        setNotificationCount(notificationsData.length);
-
-        // 2. Check for local events (once per day)
-        const lastChecked = localStorage.getItem('lastEventCheck');
-        const today = new Date().toISOString().split('T')[0];
-        if (lastChecked !== today) {
-          try {
-            const events = await findLocalEvents({ location: 'Makati' });
-            if (events) {
-              await addNotification({
-                userId: user.uid,
-                type: 'event',
-                title: 'Local Events Nearby!',
-                description: 'Potential for booking surge. ' + events.split('\n')[1].trim().substring(2),
-                isRead: false,
-                createdAt: new Date().toISOString(),
-              });
-              localStorage.setItem('lastEventCheck', today);
-              // Refresh count after adding a new notification
-              setNotificationCount(prev => prev + 1);
-            }
-          } catch (error) {
-            console.error("Failed to check for local events:", error);
-          }
-        }
-      };
-
-      fetchInitialData();
-      
-      // Mark that the effect has run
-      effectRan.current = true;
-    }
-  // The dependency array is intentionally left empty for the cleanup function
-  // to correctly use the final state of `effectRan`. We handle the user dependency inside the effect.
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [user]);
 
   return (
     <header className="bg-yellow-400 shadow-md z-10" id="app-header">
@@ -90,11 +38,6 @@ const Header = () => {
           <div className="flex items-center space-x-2 flex-shrink-0">
             <Link href="/dashboard/notifications" className="w-9 h-9 bg-white rounded-full flex items-center justify-center relative border border-gray-300 hover:border-yellow-600 transition-colors">
                 <span className="text-gray-600 text-lg">🔔</span>
-                {notificationCount > 0 && (
-                    <span id="notificationBadge" className="absolute -top-1 -right-1 w-4 h-4 bg-red-500 text-white text-xs rounded-full flex items-center justify-center font-bold">
-                    {notificationCount > 9 ? '9+' : notificationCount}
-                    </span>
-                )}
             </Link>
 
             <Link href="/dashboard/settings" className="w-9 h-9 bg-white rounded-full flex items-center justify-center border border-gray-300 hover:border-yellow-600 transition-colors">
