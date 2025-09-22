@@ -41,24 +41,64 @@ export function printContent({ contentId, title }: { contentId: string; title: s
     // Copy all style sheets from the main document to the new window
     const styleSheets = Array.from(document.styleSheets);
     styleSheets.forEach(styleSheet => {
-      if (styleSheet.href) {
-        // For external stylesheets, create a link element
-        const link = printWindow.document.createElement('link');
-        link.rel = 'stylesheet';
-        link.href = styleSheet.href;
-        printWindow.document.head.appendChild(link);
-      } else if (styleSheet.cssRules) {
-        // For inline stylesheets, create a style element
-        const style = printWindow.document.createElement('style');
-        style.textContent = Array.from(styleSheet.cssRules)
-          .map(rule => rule.cssText)
-          .join('\n');
-        printWindow.document.head.appendChild(style);
+      try {
+        if (styleSheet.href) {
+          // For external stylesheets, create a link element
+          const link = printWindow.document.createElement('link');
+          link.rel = 'stylesheet';
+          link.href = styleSheet.href;
+          printWindow.document.head.appendChild(link);
+        } else if (styleSheet.cssRules) {
+          // For inline stylesheets, create a style element
+          const style = printWindow.document.createElement('style');
+          style.textContent = Array.from(styleSheet.cssRules)
+            .map(rule => rule.cssText)
+            .join('\n');
+          printWindow.document.head.appendChild(style);
+        }
+      } catch (e) {
+        console.warn('Could not copy stylesheet. This is often due to cross-origin security restrictions.', e);
       }
     });
 
+    // Add specific styles for the print container
+    const printSpecificStyles = `
+      @media print {
+        body {
+          background-color: #fff;
+        }
+        .print-container {
+          padding: 2rem;
+          border: 1px solid #e5e7eb;
+          border-radius: 0.5rem;
+          max-width: 800px;
+          margin: 2rem auto;
+          box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1);
+        }
+      }
+       body {
+          background-color: #f3f4f6;
+        }
+       .print-container {
+          padding: 2rem;
+          border: 1px solid #e5e7eb;
+          border-radius: 0.5rem;
+          max-width: 800px;
+          margin: 2rem auto;
+          background-color: #fff;
+          box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1);
+        }
+    `;
+    const styleElement = printWindow.document.createElement('style');
+    styleElement.textContent = printSpecificStyles;
+    printWindow.document.head.appendChild(styleElement);
+
+
     printWindow.document.write('</head><body>');
+    // Wrap the content in a styled container
+    printWindow.document.write('<div class="print-container">');
     printWindow.document.write(contentElement.innerHTML);
+    printWindow.document.write('</div>');
     printWindow.document.write('</body></html>');
 
     // The timeout allows the browser to load and apply the stylesheets before printing
