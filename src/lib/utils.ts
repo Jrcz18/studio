@@ -37,6 +37,8 @@ async function getGlobalCss(): Promise<string> {
     return cssPromise;
   }
 
+  // In a Next.js app directory, `globals.css` is a public asset.
+  // This fetch request will work in both development and production/static builds.
   cssPromise = fetch('/globals.css')
     .then(response => {
       if (!response.ok) {
@@ -57,6 +59,7 @@ async function getGlobalCss(): Promise<string> {
   
   return cssPromise;
 }
+
 
 /**
  * Opens a new window and prints the content of a DOM element.
@@ -94,6 +97,8 @@ export function printContent({ contentId, title }: { contentId: string; title: s
       
       // Allow styles to apply before printing
       setTimeout(() => {
+        printWindow.document.close(); // Important for some browsers
+        printWindow.focus(); // Important for some browsers
         printWindow.print();
         printWindow.close();
       }, 500); 
