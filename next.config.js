@@ -21,9 +21,6 @@ const defaultConfig = {
 const mobileConfig = {
   ...defaultConfig,
   output: 'export',
-  // Exclude API routes from the mobile build by modifying page extensions.
-  // This prevents Next.js from trying to process them during a static export.
-  pageExtensions: ['page.tsx', 'page.ts', 'page.jsx', 'page.js'],
 };
 
 module.exports = isMobile ? mobileConfig : defaultConfig;
