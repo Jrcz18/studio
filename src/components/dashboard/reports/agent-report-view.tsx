@@ -55,7 +55,7 @@ export function AgentReportView({ report }: { report: any }) {
 
   return (
     <div className="prime-card p-4">
-        <div id="agent-report-content" className="print-area">
+        <div id="agent-report-content">
             <div className="text-center mb-6 border-b pb-4">
                 <h2 className="text-2xl font-bold text-gray-800">Monthly Agent Performance</h2>
                 <p className="text-lg font-semibold text-gray-600">{report.agent.name}</p>

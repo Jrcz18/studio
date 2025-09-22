@@ -21,8 +21,7 @@ export function formatDate(dateString: string) {
 
 
 /**
- * Opens a new window and prints the content of a DOM element.
- * It now relies on `@media print` styles in `globals.css`.
+ * Opens a new window and prints the content of a DOM element, preserving all styles.
  * @param {object} params - The parameters for printing.
  * @param {string} params.contentId - The ID of the DOM element to print.
  * @param {string} params.title - The title of the print window.
@@ -34,35 +33,40 @@ export function printContent({ contentId, title }: { contentId: string; title: s
     return;
   }
   
-  // Clone the node to avoid manipulating the original DOM
-  const contentToPrint = contentElement.cloneNode(true) as HTMLElement;
-  contentToPrint.classList.add('print-content');
-
-  const printWindow = window.open('', '_blank', 'height=800,width=800');
+  const printWindow = window.open('', '_blank');
 
   if (printWindow) {
-    printWindow.document.write(`
-      <html>
-        <head>
-          <title>${title}</title>
-          <link rel="stylesheet" href="/globals.css">
-           <style>
-             /* Additional print-specific overrides if needed */
-             body { margin: 0; }
-           </style>
-        </head>
-        <body>
-          ${contentToPrint.outerHTML}
-        </body>
-      </html>
-    `);
+    printWindow.document.write(`<html><head><title>${title}</title>`);
 
-    // The load event ensures styles are applied before printing
-    printWindow.addEventListener('load', () => {
+    // Copy all style sheets from the main document to the new window
+    const styleSheets = Array.from(document.styleSheets);
+    styleSheets.forEach(styleSheet => {
+      if (styleSheet.href) {
+        // For external stylesheets, create a link element
+        const link = printWindow.document.createElement('link');
+        link.rel = 'stylesheet';
+        link.href = styleSheet.href;
+        printWindow.document.head.appendChild(link);
+      } else if (styleSheet.cssRules) {
+        // For inline stylesheets, create a style element
+        const style = printWindow.document.createElement('style');
+        style.textContent = Array.from(styleSheet.cssRules)
+          .map(rule => rule.cssText)
+          .join('\n');
+        printWindow.document.head.appendChild(style);
+      }
+    });
+
+    printWindow.document.write('</head><body>');
+    printWindow.document.write(contentElement.innerHTML);
+    printWindow.document.write('</body></html>');
+
+    // The timeout allows the browser to load and apply the stylesheets before printing
+    setTimeout(() => {
         printWindow.document.close();
         printWindow.focus(); 
         printWindow.print();
         printWindow.close();
-    }, true);
+    }, 500);
   }
 }

@@ -76,11 +76,11 @@ export function BookingReceiptDialog({
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-md max-h-[80vh] flex flex-col p-0">
-        <DialogHeader className="p-6 pb-0">
+        <DialogHeader className="p-6 pb-0 print-hide">
           <DialogTitle>Booking Receipt</DialogTitle>
         </DialogHeader>
         <div className="overflow-y-auto flex-1">
-          <div id={receiptContentId} className="space-y-4 p-6 print-area">
+          <div id={receiptContentId} className="space-y-4 p-6">
               {loading ? (
                   <div className="text-center p-8">Loading receipt details...</div>
               ) : (
