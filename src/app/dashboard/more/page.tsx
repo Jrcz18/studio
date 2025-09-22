@@ -32,7 +32,6 @@ const analyticsItems = [
 ];
 
 const appItems = [
-    { label: 'Notifications', icon: Bell, href: '/dashboard/notifications' },
     { label: 'Receipt Settings', icon: Receipt, href: '/dashboard/settings/receipt' },
 ]
 
