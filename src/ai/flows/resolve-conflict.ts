@@ -37,6 +37,17 @@ export type ConflictResolutionOutput = z.infer<typeof ConflictResolutionOutputSc
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL;
 
 export async function suggestConflictResolution(input: ConflictResolutionInput): Promise<ConflictResolutionOutput> {
+    // TODO: Backend functionality is temporarily disabled until Firebase billing is enabled.
+    // This is a placeholder response.
+    console.log("Called suggestConflictResolution with:", input);
+    await new Promise(resolve => setTimeout(resolve, 1000)); // Simulate network delay
+    return {
+        suggestion: "AI conflict resolution is temporarily disabled. Please resolve manually or enable billing and deploy Firebase Functions to activate this feature.",
+        suggestedAction: 'offer_alternative'
+    };
+
+    /*
+    // Original code to be re-enabled later
     const res = await fetch(`${API_BASE_URL}/resolveConflict`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -47,4 +58,5 @@ export async function suggestConflictResolution(input: ConflictResolutionInput):
         throw new Error(error.message || 'Request failed');
     }
     return res.json();
+    */
 }

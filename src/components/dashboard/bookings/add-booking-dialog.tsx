@@ -277,17 +277,19 @@ export function AddBookingDialog({
               placeholder="Any special requests or notes..."
             />
           </div>
-           <div className="flex items-center space-x-2">
+           {/* TODO: This feature is temporarily disabled until Firebase Functions are deployed. */}
+           <div className="flex items-center space-x-2" title="Backend functions must be deployed to enable notifications.">
             <Checkbox
               id="sendAdminEmail"
               checked={sendAdminEmail}
               onCheckedChange={(checked) => setSendAdminEmail(!!checked)}
+              disabled={true}
             />
             <label
               htmlFor="sendAdminEmail"
               className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
             >
-              Send Admin Notification Email
+              Send Admin Notification (Temporarily Disabled)
             </label>
           </div>
           <DialogFooter>

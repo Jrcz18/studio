@@ -78,6 +78,13 @@ export function AddExpenseDialog({
 
   const handleDescriptionBlur = async () => {
     if (!description || amount <= 0) return;
+    
+    // TODO: AI Analysis is temporarily disabled until Firebase billing is enabled.
+    // We will skip the analysis and let the user categorize manually.
+    return;
+
+    /*
+    // Original code to be re-enabled later
     setIsAnalyzing(true);
     try {
       const result = await analyzeExpense({ description, amount });
@@ -99,6 +106,7 @@ export function AddExpenseDialog({
     } finally {
       setIsAnalyzing(false);
     }
+    */
   };
 
   const handleSubmit = (e: React.FormEvent<HTMLFormElement>) => {

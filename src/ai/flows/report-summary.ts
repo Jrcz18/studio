@@ -29,6 +29,16 @@ export type ReportSummaryOutput = z.infer<typeof ReportSummaryOutputSchema>;
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL;
 
 export async function generateReportSummary(input: ReportSummaryInput): Promise<ReportSummaryOutput> {
+    // TODO: Backend functionality is temporarily disabled until Firebase billing is enabled.
+    // This is a placeholder response.
+    console.log("Called generateReportSummary with:", input);
+    await new Promise(resolve => setTimeout(resolve, 500)); // Simulate network delay
+    return {
+      summary: `AI summary for ${input.unitName} is temporarily disabled. Please enable billing and deploy Firebase Functions to activate this feature.`,
+    };
+
+    /*
+    // Original code to be re-enabled later
     const res = await fetch(`${API_BASE_URL}/generateReportSummary`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -39,4 +49,5 @@ export async function generateReportSummary(input: ReportSummaryInput): Promise<
         throw new Error(error.message || 'Request failed');
     }
     return res.json();
+    */
 }
