@@ -37,13 +37,18 @@ export function LoginForm() {
         }
     };
 
-    if (loading || user) {
+    if (loading) {
         return (
-            <div className="flex items-center justify-center min-h-screen bg-gray-50">
+             <div className="text-center p-4">
                 <p>Loading...</p>
             </div>
         );
     }
+    
+    if (user) {
+        return null;
+    }
+
 
     return (
         <>

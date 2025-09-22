@@ -13,6 +13,7 @@ const Header = () => {
   const [currentDate, setCurrentDate] = useState('');
   const [notifications, setNotifications] = useState<AppNotification[]>([]);
   const { user } = useAuth();
+  const notificationsFetched = useRef(false);
 
 
   useEffect(() => {
@@ -26,7 +27,8 @@ const Header = () => {
     setCurrentDate(now.toLocaleDateString('en-US', options));
     
     async function fetchNotifications() {
-        if(user) {
+        if(user && !notificationsFetched.current) {
+            notificationsFetched.current = true;
             const notificationsData = await getUnreadNotifications(user.uid);
             setNotifications(notificationsData);
         }
