@@ -4,7 +4,7 @@
  */
 
 import { ai } from '@/ai/genkit';
-import { z } from 'zod'; // ✅ import directly from zod
+import { z } from 'zod';
 
 // Input schema
 export const DiscordNotificationInputSchema = z.object({
