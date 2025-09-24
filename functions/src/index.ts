@@ -1,43 +1,42 @@
 
 'use server';
-import * as functions from 'firebase-functions';
+import functions from 'firebase-functions';
 import express from 'express';
 import cors from 'cors';
 import { config } from 'dotenv';
 
-import { chatFlow } from '@/ai/flows/chat';
-import { expenseAnalysisFlow } from '@/ai/flows/expense-analyzer';
-import { resolveConflictFlow } from '@/ai/flows/resolve-conflict';
-import { generateReportSummaryFlow } from '@/ai/flows/report-summary';
-import { generateAgentReportSummaryFlow } from '@/ai/flows/agent-report-summary';
-import { generateInvestorReportSummaryFlow } from '@/ai/flows/investor-report-summary';
-import { generateUnitHealthReportFlow } from '@/ai/flows/generate-unit-health-report';
-import { sendAdminNotificationFlow } from '@/ai/flows/send-admin-notification';
-
-config(); 
+config();
 
 const app = express();
 app.use(cors({ origin: true }));
 app.use(express.json());
 
-const asyncHandler = (fn: (req: express.Request, res: express.Response) => Promise<any>) => 
-  (req: express.Request, res: express.Response, next: express.NextFunction) => {
-    Promise.resolve(fn(req, res)).catch(next);
+// Helper to dynamically import and handle flows
+const handleFlow = (flowName: string, modulePath: string) => async (req: express.Request, res: express.Response) => {
+    try {
+        const module = await import(modulePath);
+        const flow = module[flowName];
+        if (typeof flow !== 'function') {
+            throw new Error(`Flow '${flowName}' not found or not a function in module '${modulePath}'.`);
+        }
+        const result = await flow(req.body);
+        res.json(result);
+    } catch (error: any) {
+        console.error(`Error handling flow '${flowName}':`, error);
+        res.status(500).json({ error: 'Something went wrong!', message: error.message });
+    }
 };
 
-const handleFlow = (flow: (input: any) => Promise<any>) => asyncHandler(async (req, res) => {
-    const result = await flow(req.body);
-    res.json(result);
-});
+// Define endpoints using the lazy-loading helper
+app.post('/chat', handleFlow('chatFlow', '@/ai/flows/chat'));
+app.post('/analyzeExpense', handleFlow('expenseAnalysisFlow', '@/ai/flows/expense-analyzer'));
+app.post('/resolveConflict', handleFlow('resolveConflictFlow', '@/ai/flows/resolve-conflict'));
+app.post('/generateReportSummary', handleFlow('generateReportSummaryFlow', '@/ai/flows/report-summary'));
+app.post('/generateAgentReportSummary', handleFlow('generateAgentReportSummaryFlow', '@/ai/flows/agent-report-summary'));
+app.post('/generateInvestorReportSummary', handleFlow('generateInvestorReportSummaryFlow', '@/ai/flows/investor-report-summary'));
+app.post('/generateUnitHealthReport', handleFlow('generateUnitHealthReportFlow', '@/ai/flows/generate-unit-health-report'));
+app.post('/sendAdminBookingNotification', handleFlow('sendAdminNotificationFlow', '@/ai/flows/send-admin-notification'));
 
-app.post('/chat', handleFlow(chatFlow));
-app.post('/analyzeExpense', handleFlow(expenseAnalysisFlow));
-app.post('/resolveConflict', handleFlow(resolveConflictFlow));
-app.post('/generateReportSummary', handleFlow(generateReportSummaryFlow));
-app.post('/generateAgentReportSummary', handleFlow(generateAgentReportSummaryFlow));
-app.post('/generateInvestorReportSummary', handleFlow(generateInvestorReportSummaryFlow));
-app.post('/generateUnitHealthReport', handleFlow(generateUnitHealthReportFlow));
-app.post('/sendAdminBookingNotification', handleFlow(sendAdminNotificationFlow));
 
 app.use((err: Error, req: express.Request, res: express.Response, next: express.NextFunction) => {
     console.error(err.stack);
