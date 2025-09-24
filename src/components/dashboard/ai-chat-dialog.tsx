@@ -13,27 +13,7 @@ import { Button } from '@/components/ui/button';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Cpu, Send, User } from 'lucide-react';
 import { cn } from '@/lib/utils';
-import type { ChatInput } from '@/ai/flows/chat';
-
-type Message = {
-  role: 'user' | 'model';
-  content: string;
-};
-
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL;
-
-async function chat(input: ChatInput): Promise<{ response: string }> {
-    const res = await fetch(`${API_BASE_URL}/chat`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(input),
-    });
-    if (!res.ok) {
-        const error = await res.json();
-        throw new Error(error.message || 'AI chat request failed');
-    }
-    return res.json();
-}
+import { chat, type ChatInput, type Message } from '@/ai/flows/chat';
 
 
 export function AIChatDialog({
@@ -67,7 +47,8 @@ export function AIChatDialog({
 
     try {
       const chatInput: ChatInput = {
-        history: messages,
+        // Genkit expects a history of user/model messages. 'tool' is for responses, not history.
+        history: messages.filter(m => m.role === 'user' || m.role === 'model'),
         prompt: input,
       };
       const result = await chat(chatInput);

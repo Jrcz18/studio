@@ -1,15 +1,13 @@
 
-'use client';
+'use server';
 /**
- * @fileOverview Client-side function to send an email notification to the building admin by calling a backend API.
- *
- * - sendAdminBookingNotification - Triggers the admin notification via the backend.
- * - AdminNotificationInput - The input type for the notification function.
+ * @fileOverview Admin notification flow (simulated email).
  */
 
-import { z } from 'zod';
+import { ai } from '@/ai/genkit';
+import { z } from 'genkit';
 
-const AdminNotificationInputSchema = z.object({
+export const AdminNotificationInputSchema = z.object({
   guestName: z.string(),
   guestContact: z.string(),
   numberOfGuests: z.number(),
@@ -19,14 +17,35 @@ const AdminNotificationInputSchema = z.object({
 });
 export type AdminNotificationInput = z.infer<typeof AdminNotificationInputSchema>;
 
-const AdminNotificationOutputSchema = z.object({
+export const AdminNotificationOutputSchema = z.object({
   message: z.string(),
 });
 export type AdminNotificationOutput = z.infer<typeof AdminNotificationOutputSchema>;
 
+export const sendAdminNotificationFlow = ai.defineFlow(
+  {
+    name: 'sendAdminNotificationFlow',
+    inputSchema: AdminNotificationInputSchema,
+    outputSchema: AdminNotificationOutputSchema,
+  },
+  async (input) => {
+    const ADMIN_EMAIL = 'admin@example.com';
+    const emailSubject = `New Guest Arrival: ${input.guestName} for Unit ${input.unitName}`;
+    const emailBody = `<p>Dear Admin,</p><p>Guest: ${input.guestName}, Contact: ${input.guestContact}, Guests: ${input.numberOfGuests}, Check-in: ${input.checkinDate}, Check-out: ${input.checkoutDate}, Unit: ${input.unitName}.</p>`;
+    
+    // In a real app, you would use an email service like SendGrid here.
+    // For this simulation, we just log to the console.
+    console.log(`--- SIMULATING EMAIL TO ${ADMIN_EMAIL} ---`);
+    console.log(`Subject: ${emailSubject}`);
+    console.log(`Body: ${emailBody}`);
 
+    return { message: `Successfully sent notification for ${input.guestName} to ${ADMIN_EMAIL}` };
+  }
+);
+
+
+// Client-facing function
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL;
-
 export async function sendAdminBookingNotification(input: AdminNotificationInput): Promise<AdminNotificationOutput> {
     const res = await fetch(`${API_BASE_URL}/sendAdminBookingNotification`, {
         method: 'POST',

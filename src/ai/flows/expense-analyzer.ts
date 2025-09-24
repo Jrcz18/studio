@@ -1,46 +1,54 @@
 
-'use client';
+'use server';
 /**
- * @fileOverview Client-side function to analyze an expense by calling a backend API.
- *
- * - analyzeExpense - A function that calls the backend to analyze the expense.
- * - ExpenseAnalysisInput - The input type for the analyzeExpense function.
- * - ExpenseAnalysisOutput - The return type for the analyzeExpense function.
+ * @fileOverview Expense analysis flow.
  */
 
-import { z } from 'zod';
+import { ai } from '@/ai/genkit';
+import { z } from 'genkit';
 
-const ExpenseAnalysisInputSchema = z.object({
-    description: z.string().describe('The description of the expense.'),
-    amount: z.number().describe('The amount of the expense.'),
+export const ExpenseAnalysisInputSchema = z.object({
+  description: z.string(),
+  amount: z.number(),
 });
-
-const ExpenseAnalysisOutputSchema = z.object({
-    category: z
-      .enum([
-        'utilities',
-        'maintenance',
-        'cleaning',
-        'supplies',
-        'insurance',
-        'other',
-      ])
-      .describe('The suggested category for the expense.'),
-    isAnomaly: z
-      .boolean()
-      .describe('Whether the expense is considered an anomaly.'),
-    anomalyReason: z
-      .string()
-      .optional()
-      .describe('The reason if the expense is an anomaly.'),
-});
-
 export type ExpenseAnalysisInput = z.infer<typeof ExpenseAnalysisInputSchema>;
+
+export const ExpenseAnalysisOutputSchema = z.object({
+  category: z.enum([
+    'utilities',
+    'maintenance',
+    'cleaning',
+    'supplies',
+    'insurance',
+    'other',
+  ]),
+  isAnomaly: z.boolean(),
+  anomalyReason: z.string().optional(),
+});
 export type ExpenseAnalysisOutput = z.infer<typeof ExpenseAnalysisOutputSchema>;
 
+const expenseAnalysisPrompt = ai.definePrompt({
+  name: 'expenseAnalysisPrompt',
+  input: { schema: ExpenseAnalysisInputSchema },
+  output: { schema: ExpenseAnalysisOutputSchema },
+  prompt: `Analyze the expense: "{{description}}" - ₱{{amount}}. Suggest a category: 'utilities', 'maintenance', 'cleaning', 'supplies', 'insurance', 'other'. Is it an anomaly (e.g., electricity > ₱20,000)? If so, set isAnomaly to true and provide a reason.`,
+});
 
+export const expenseAnalysisFlow = ai.defineFlow(
+  {
+    name: 'expenseAnalysisFlow',
+    inputSchema: ExpenseAnalysisInputSchema,
+    outputSchema: ExpenseAnalysisOutputSchema,
+  },
+  async (input) => {
+    const { output } = await expenseAnalysisPrompt(input);
+    return output!;
+  }
+);
+
+
+// Client-facing function
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL;
-
 export async function analyzeExpense(input: ExpenseAnalysisInput): Promise<ExpenseAnalysisOutput> {
     const res = await fetch(`${API_BASE_URL}/analyzeExpense`, {
         method: 'POST',
