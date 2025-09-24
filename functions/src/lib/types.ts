@@ -76,3 +76,14 @@ export type AppNotification = {
     isRead: boolean;
     data?: Record<string, any>;
 };
+
+export type Expense = {
+    id?: string;
+    title: string;
+    category: 'utilities' | 'maintenance' | 'cleaning' | 'supplies' | 'insurance' | 'other';
+    amount: number;
+    date: string;
+    unitId: string | null;
+    description: string;
+    status: 'paid' | 'unpaid';
+};
