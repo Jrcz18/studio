@@ -2,12 +2,9 @@
 'use client';
 
 import { db } from '@/lib/firebase';
-import { collection, getDocs, addDoc, deleteDoc, doc, updateDoc } from 'firebase/firestore';
+import { collection, getDocs, deleteDoc, doc, updateDoc } from 'firebase/firestore';
 import type { Booking } from '@/lib/types';
-import { addNotification } from './notifications';
 import { auth } from '@/lib/firebase';
-import { sendDiscordNotification } from '@/ai/flows/send-discord-notification';
-
 
 const bookingsCollectionRef = collection(db, 'bookings');
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL;
@@ -22,17 +19,23 @@ export async function addBooking(bookingData: Omit<Booking, 'id'>): Promise<stri
     if (!API_BASE_URL) {
         throw new Error("API base URL is not configured. Cannot create booking.");
     }
+    const user = auth.currentUser;
+
+    const payload = {
+        ...bookingData,
+        uid: user?.uid, // Pass the current user's ID to the backend for notifications
+    };
+
     const response = await fetch(`${API_BASE_URL}/booking`, {
         method: 'POST',
         headers: {
             'Content-Type': 'application/json',
         },
-        body: JSON.stringify(bookingData),
+        body: JSON.stringify(payload),
     });
 
     if (!response.ok) {
         const errorData = await response.json();
-        // For conflict errors, embed the data in the error message
         if (response.status === 409) {
             throw new Error(`409 Conflict: ${JSON.stringify(errorData)}`);
         }
@@ -40,33 +43,7 @@ export async function addBooking(bookingData: Omit<Booking, 'id'>): Promise<stri
     }
     
     const result = await response.json();
-    const bookingId = result.id;
-
-    // Create a notification in the app
-    const user = auth.currentUser;
-    if (user) {
-        await addNotification({
-            userId: user.uid,
-            type: 'booking',
-            title: 'New Booking Created',
-            description: `Booking for ${bookingData.guestFirstName} ${bookingData.guestLastName} was successfully created.`,
-            isRead: false,
-            createdAt: new Date().toISOString(),
-            data: { bookingId }
-        });
-    }
-
-     // Send Discord notification
-    try {
-        await sendDiscordNotification({
-            content: `📅 **New Booking!**\n\n**Guest:** ${bookingData.guestFirstName} ${bookingData.guestLastName}\n**Check-in:** ${bookingData.checkinDate}\n**Check-out:** ${bookingData.checkoutDate}\n**Amount:** ₱${bookingData.totalAmount.toLocaleString()}`
-        });
-    } catch (e) {
-        console.warn("Failed to send Discord notification for new booking.", e);
-    }
-
-
-    return bookingId;
+    return result.id;
 }
 
 export async function updateBooking(bookingData: Booking): Promise<void> {

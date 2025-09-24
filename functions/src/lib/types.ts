@@ -1,4 +1,5 @@
 
+
 export type Unit = {
   id?: string;
   name: string;
@@ -37,4 +38,41 @@ export type Booking = {
   paymentStatus: 'pending' | 'partial' | 'paid';
   specialRequests: string;
   createdAt: string;
+};
+
+export type Agent = {
+    id?: string;
+    name: string;
+    email: string;
+    phone: string;
+    commissionType: 'percentage' | 'fixed_commission';
+    commissionRate: number;
+    commissionMarkup: number;
+    totalBookings: number;
+    totalCommissions: number;
+    joinDate: string;
+    status: 'active' | 'inactive';
+};
+
+export type Investor = {
+    id?: string;
+    name: string;
+    email: string;
+    phone: string;
+    investmentAmount: number;
+    sharePercentage: number;
+    joinDate: string;
+    status: 'active' | 'inactive';
+    unitIds: string[];
+};
+
+export type AppNotification = {
+    id?: string;
+    userId: string;
+    type: 'booking' | 'expense' | 'reminder' | 'event' | 'system';
+    title: string;
+    description: string;
+    createdAt: string;
+    isRead: boolean;
+    data?: Record<string, any>;
 };

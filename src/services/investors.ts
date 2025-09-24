@@ -1,3 +1,4 @@
+
 'use client';
 
 import { db } from '@/lib/firebase';
@@ -5,6 +6,7 @@ import { collection, getDocs, addDoc, doc, updateDoc, deleteDoc } from 'firebase
 import type { Investor } from '@/lib/types';
 
 const investorsCollection = collection(db, 'investors');
+const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL;
 
 export async function getInvestors(): Promise<Investor[]> {
     const snapshot = await getDocs(investorsCollection);
@@ -12,8 +14,21 @@ export async function getInvestors(): Promise<Investor[]> {
 }
 
 export async function addInvestor(investorData: Omit<Investor, 'id'>): Promise<string> {
-    const docRef = await addDoc(investorsCollection, investorData);
-    return docRef.id;
+    if (!API_BASE_URL) {
+        throw new Error("API base URL is not configured.");
+    }
+    const response = await fetch(`${API_BASE_URL}/investor`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(investorData),
+    });
+
+     if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error || 'Failed to add investor via backend');
+    }
+    const result = await response.json();
+    return result.id;
 }
 
 export async function updateInvestor(investorData: Investor): Promise<void> {

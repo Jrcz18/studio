@@ -6,7 +6,9 @@ import cors from 'cors';
 import { config } from 'dotenv';
 import { getFirebaseAdmin } from './lib/firebase-admin';
 import ical from 'ical-generator';
-import type { Booking, Unit } from './lib/types';
+import type { Booking, Unit, Agent, Investor } from './lib/types';
+import { addNotification } from './services/notifications';
+import { sendDiscordNotificationFlow } from './ai/flows/send-discord-notification';
 
 
 config();
@@ -60,9 +62,7 @@ app.post('/booking', async (req, res) => {
         for (const existing of existingBookings) {
             const existingStart = new Date(existing.checkinDate);
             const existingEnd = new Date(existing.checkoutDate);
-            // Check for overlap: (StartA <= EndB) and (EndA >= StartB)
             if (newStart < existingEnd && newEnd > existingStart) {
-                // Conflict found, return 409 status with conflicting booking details
                 return res.status(409).json({
                     error: 'Booking conflict',
                     message: 'The selected dates overlap with an existing booking.',
@@ -73,7 +73,26 @@ app.post('/booking', async (req, res) => {
         // --- End of Conflict Detection ---
 
         const docRef = await adminDb.collection('bookings').add(newBooking);
-        res.status(201).json({ id: docRef.id });
+        const bookingId = docRef.id;
+
+        // --- Notifications ---
+        if (newBooking.uid) { // uid is only present for logged-in users who should get notifications
+            await addNotification({
+                userId: newBooking.uid,
+                type: 'booking',
+                title: 'New Booking Created',
+                description: `Booking for ${newBooking.guestFirstName} ${newBooking.guestLastName} was successfully created.`,
+                isRead: false,
+                createdAt: new Date().toISOString(),
+                data: { bookingId }
+            });
+        }
+        
+        await sendDiscordNotificationFlow({
+            content: `📅 **New Booking!**\n\n**Guest:** ${newBooking.guestFirstName} ${newBooking.guestLastName}\n**Check-in:** ${newBooking.checkinDate}\n**Check-out:** ${newBooking.checkoutDate}\n**Amount:** ₱${newBooking.totalAmount.toLocaleString()}`
+        }).catch(e => console.error("Discord notification failed for new booking:", e));
+
+        res.status(201).json({ id: bookingId });
 
     } catch (error: any) {
         console.error('Error creating booking:', error);
@@ -86,14 +105,47 @@ app.post('/booking', async (req, res) => {
 app.post('/unit', async (req, res) => {
     try {
         const { adminDb } = await getFirebaseAdmin();
-        const newUnit = req.body;
+        const newUnit = req.body as Omit<Unit, 'id'>;
         const docRef = await adminDb.collection('units').add(newUnit);
+
+        // --- Notifications ---
+        await sendDiscordNotificationFlow({
+            content: `🎉 **New Unit Added!** 🎉\n\n**Name:** ${newUnit.name}\n**Type:** ${newUnit.type}\n**Rate:** ₱${newUnit.rate.toLocaleString()}`
+        }).catch(e => console.error("Discord notification failed for new unit:", e));
+        
         res.status(201).json({ id: docRef.id });
     } catch (error: any) {
         console.error('Error creating unit:', error);
         res.status(500).json({ error: 'Failed to create unit' });
     }
 });
+
+// Agent Creation Endpoint
+app.post('/agent', async (req, res) => {
+    try {
+        const { adminDb } = await getFirebaseAdmin();
+        const newAgent = req.body as Omit<Agent, 'id'>;
+        const docRef = await adminDb.collection('agents').add(newAgent);
+        res.status(201).json({ id: docRef.id });
+    } catch (error: any) {
+        console.error('Error creating agent:', error);
+        res.status(500).json({ error: 'Failed to create agent' });
+    }
+});
+
+// Investor Creation Endpoint
+app.post('/investor', async (req, res) => {
+    try {
+        const { adminDb } = await getFirebaseAdmin();
+        const newInvestor = req.body as Omit<Investor, 'id'>;
+        const docRef = await adminDb.collection('investors').add(newInvestor);
+        res.status(201).json({ id: docRef.id });
+    } catch (error: any) {
+        console.error('Error creating investor:', error);
+        res.status(500).json({ error: 'Failed to create investor' });
+    }
+});
+
 
 // Master iCal Generation Endpoint (All Units)
 app.get('/ical/all', async (req, res) => {
