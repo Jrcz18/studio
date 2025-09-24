@@ -1,39 +1,17 @@
 
-'use server';
+'use client';
 /**
- * @fileOverview Admin notification flow (simulated email).
+ * @fileOverview Client-side function for sending an admin notification.
  */
-
-import { ai } from '@/ai/genkit';
-import { z } from 'genkit';
-import { AdminNotificationInputSchema, AdminNotificationOutputSchema, type AdminNotificationInput, type AdminNotificationOutput } from '@/lib/types';
+import type { AdminNotificationInput, AdminNotificationOutput } from '@/lib/types';
 
 
-export const sendAdminNotificationFlow = ai.defineFlow(
-  {
-    name: 'sendAdminNotificationFlow',
-    inputSchema: AdminNotificationInputSchema,
-    outputSchema: AdminNotificationOutputSchema,
-  },
-  async (input) => {
-    const ADMIN_EMAIL = 'admin@example.com';
-    const emailSubject = `New Guest Arrival: ${input.guestName} for Unit ${input.unitName}`;
-    const emailBody = `<p>Dear Admin,</p><p>Guest: ${input.guestName}, Contact: ${input.guestContact}, Guests: ${input.numberOfGuests}, Check-in: ${input.checkinDate}, Check-out: ${input.checkoutDate}, Unit: ${input.unitName}.</p>`;
-    
-    // In a real app, you would use an email service like SendGrid here.
-    // For this simulation, we just log to the console.
-    console.log(`--- SIMULATING EMAIL TO ${ADMIN_EMAIL} ---`);
-    console.log(`Subject: ${emailSubject}`);
-    console.log(`Body: ${emailBody}`);
-
-    return { message: `Successfully sent notification for ${input.guestName} to ${ADMIN_EMAIL}` };
-  }
-);
-
-
-// Client-facing function
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL;
+
 export async function sendAdminBookingNotification(input: AdminNotificationInput): Promise<AdminNotificationOutput> {
+    if (!API_BASE_URL) {
+        throw new Error('API base URL is not configured.');
+    }
     const res = await fetch(`${API_BASE_URL}/sendAdminBookingNotification`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
