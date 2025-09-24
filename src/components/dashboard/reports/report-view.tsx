@@ -4,7 +4,8 @@
 import { formatDate, printContent } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
 import { useEffect, useState } from 'react';
-import { generateReportSummary, type ReportSummaryInput } from '@/ai/flows/report-summary';
+import { generateReportSummary } from '@/ai/flows/report-summary';
+import type { ReportSummaryInput } from '@/lib/types';
 
 export function ReportView({ report }: { report: any }) {
   const [summary, setSummary] = useState('');

@@ -6,19 +6,8 @@
 import { ai } from '@/ai/genkit';
 import { z } from 'genkit';
 import { getFirebaseAdmin } from '@/lib/firebase-admin';
+import { UnitHealthReportInputSchema, UnitHealthReportOutputSchema, type UnitHealthReportInput, type UnitHealthReportOutput } from '@/lib/types';
 
-export const UnitHealthReportInputSchema = z.object({
-  unitId: z.string(),
-  unitName: z.string(),
-});
-export type UnitHealthReportInput = z.infer<typeof UnitHealthReportInputSchema>;
-
-export const UnitHealthReportOutputSchema = z.object({
-  healthScore: z.number().min(0).max(100),
-  summary: z.string(),
-  recommendations: z.array(z.string()),
-});
-export type UnitHealthReportOutput = z.infer<typeof UnitHealthReportOutputSchema>;
 
 const healthReportPrompt = ai.definePrompt({
   name: 'unitHealthReportPrompt',

@@ -13,7 +13,8 @@ import { Button } from '@/components/ui/button';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Cpu, Send, User } from 'lucide-react';
 import { cn } from '@/lib/utils';
-import { chat, type ChatInput, type Message } from '@/ai/flows/chat';
+import { chat } from '@/ai/flows/chat';
+import type { ChatInput, Message } from '@/lib/types';
 
 
 export function AIChatDialog({

@@ -6,31 +6,7 @@
 
 import { ai } from '@/ai/genkit';
 import { z } from 'genkit';
-
-export const AgentReportSummaryInputSchema = z.object({
-  agentName: z.string().describe('The name of the agent.'),
-  month: z.string().describe('The month of the report (e.g., "January").'),
-  year: z.number().describe('The year of the report (e.g., 2024).'),
-  totalBookings: z
-    .number()
-    .describe('The total number of bookings secured by the agent.'),
-  totalRevenueGenerated: z
-    .number()
-    .describe("The total revenue generated from the agent's bookings."),
-  totalCommission: z
-    .number()
-    .describe('The total commission earned by the agent.'),
-});
-export type AgentReportSummaryInput = z.infer<typeof AgentReportSummaryInputSchema>;
-
-export const AgentReportSummaryOutputSchema = z.object({
-  summary: z
-    .string()
-    .describe(
-      "A concise, insightful summary of the agent's monthly report."
-    ),
-});
-export type AgentReportSummaryOutput = z.infer<typeof AgentReportSummaryOutputSchema>;
+import { AgentReportSummaryInputSchema, AgentReportSummaryOutputSchema, type AgentReportSummaryInput, type AgentReportSummaryOutput } from '@/lib/types';
 
 const agentReportSummaryPrompt = ai.definePrompt({
   name: 'agentReportSummaryPrompt',

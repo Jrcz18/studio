@@ -13,8 +13,9 @@ import {
 } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { formatDate } from '@/lib/utils';
-import { ConflictResolutionInput, suggestConflictResolution } from '@/ai/flows/resolve-conflict';
+import { suggestConflictResolution } from '@/ai/flows/resolve-conflict';
 import { AlertCircle, Cpu } from 'lucide-react';
+import type { ConflictResolutionInput } from '@/lib/types';
 
 
 interface ConflictDialogProps {

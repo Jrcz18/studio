@@ -4,25 +4,9 @@
  * @fileOverview AI chat assistant flow.
  */
 import { ai } from '@/ai/genkit';
-import { z } from 'genkit';
 import { translateText, getPropertyDatabaseReport } from '@/ai/tools';
+import { ChatInputSchema, ChatOutputSchema, type ChatInput, type ChatOutput } from '@/lib/types';
 
-export const MessageSchema = z.object({
-  role: z.enum(['user', 'model', 'tool']),
-  content: z.string(),
-});
-export type Message = z.infer<typeof MessageSchema>;
-
-export const ChatInputSchema = z.object({
-  history: z.array(MessageSchema).describe('The conversation history.'),
-  prompt: z.string().describe("The user's latest message."),
-});
-export type ChatInput = z.infer<typeof ChatInputSchema>;
-
-export const ChatOutputSchema = z.object({
-  response: z.string().describe("The AI's response."),
-});
-export type ChatOutput = z.infer<typeof ChatOutputSchema>;
 
 const chatPrompt = ai.definePrompt({
   name: 'chatPrompt',

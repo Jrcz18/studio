@@ -4,7 +4,8 @@
 import { formatDate, printContent } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
 import { useEffect, useState } from 'react';
-import { generateAgentReportSummary, type AgentReportSummaryInput } from '@/ai/flows/agent-report-summary';
+import { generateAgentReportSummary } from '@/ai/flows/agent-report-summary';
+import type { AgentReportSummaryInput } from '@/lib/types';
 
 export function AgentReportView({ report }: { report: any }) {
   const [summary, setSummary] = useState('');

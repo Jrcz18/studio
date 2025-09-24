@@ -4,7 +4,8 @@
 import { formatDate, printContent } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
 import { useEffect, useState } from 'react';
-import { generateInvestorReportSummary, type InvestorReportSummaryInput } from '@/ai/flows/investor-report-summary';
+import { generateInvestorReportSummary } from '@/ai/flows/investor-report-summary';
+import type { InvestorReportSummaryInput } from '@/lib/types';
 
 
 export function InvestorReportView({ report }: { report: any }) {

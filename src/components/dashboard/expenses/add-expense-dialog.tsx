@@ -23,7 +23,8 @@ import {
 } from '@/components/ui/select';
 import { Textarea } from '@/components/ui/textarea';
 import { useToast } from '@/hooks/use-toast';
-import { analyzeExpense, type ExpenseAnalysisInput } from '@/ai/flows/expense-analyzer';
+import { analyzeExpense } from '@/ai/flows/expense-analyzer';
+import type { ExpenseAnalysisInput } from '@/lib/types';
 
 
 export function AddExpenseDialog({

@@ -6,21 +6,8 @@
 
 import { ai } from '@/ai/genkit';
 import { z } from 'genkit';
+import { AdminNotificationInputSchema, AdminNotificationOutputSchema, type AdminNotificationInput, type AdminNotificationOutput } from '@/lib/types';
 
-export const AdminNotificationInputSchema = z.object({
-  guestName: z.string(),
-  guestContact: z.string(),
-  numberOfGuests: z.number(),
-  checkinDate: z.string(),
-  checkoutDate: z.string(),
-  unitName: z.string(),
-});
-export type AdminNotificationInput = z.infer<typeof AdminNotificationInputSchema>;
-
-export const AdminNotificationOutputSchema = z.object({
-  message: z.string(),
-});
-export type AdminNotificationOutput = z.infer<typeof AdminNotificationOutputSchema>;
 
 export const sendAdminNotificationFlow = ai.defineFlow(
   {

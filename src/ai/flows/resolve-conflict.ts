@@ -6,29 +6,8 @@
 
 import { ai } from '@/ai/genkit';
 import { z } from 'genkit';
+import { ConflictResolutionInputSchema, ConflictResolutionOutputSchema, type ConflictResolutionInput, type ConflictResolutionOutput } from '@/lib/types';
 
-export const BookingDetailsSchema = z.object({
-  id: z.string().optional(),
-  guestName: z.string(),
-  checkinDate: z.string(),
-  checkoutDate: z.string(),
-  totalAmount: z.number(),
-  createdAt: z.string(),
-});
-export type BookingDetails = z.infer<typeof BookingDetailsSchema>;
-
-export const ConflictResolutionInputSchema = z.object({
-  existingBooking: BookingDetailsSchema,
-  newBooking: BookingDetailsSchema,
-  unitName: z.string(),
-});
-export type ConflictResolutionInput = z.infer<typeof ConflictResolutionInputSchema>;
-
-export const ConflictResolutionOutputSchema = z.object({
-  suggestion: z.string(),
-  suggestedAction: z.enum(['keep_existing', 'prioritize_new', 'offer_alternative']),
-});
-export type ConflictResolutionOutput = z.infer<typeof ConflictResolutionOutputSchema>;
 
 const resolveConflictPrompt = ai.definePrompt({
   name: 'resolveConflictPrompt',

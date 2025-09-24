@@ -6,26 +6,8 @@
 
 import { ai } from '@/ai/genkit';
 import { z } from 'genkit';
+import { ExpenseAnalysisInputSchema, ExpenseAnalysisOutputSchema, type ExpenseAnalysisInput, type ExpenseAnalysisOutput } from '@/lib/types';
 
-export const ExpenseAnalysisInputSchema = z.object({
-  description: z.string(),
-  amount: z.number(),
-});
-export type ExpenseAnalysisInput = z.infer<typeof ExpenseAnalysisInputSchema>;
-
-export const ExpenseAnalysisOutputSchema = z.object({
-  category: z.enum([
-    'utilities',
-    'maintenance',
-    'cleaning',
-    'supplies',
-    'insurance',
-    'other',
-  ]),
-  isAnomaly: z.boolean(),
-  anomalyReason: z.string().optional(),
-});
-export type ExpenseAnalysisOutput = z.infer<typeof ExpenseAnalysisOutputSchema>;
 
 const expenseAnalysisPrompt = ai.definePrompt({
   name: 'expenseAnalysisPrompt',

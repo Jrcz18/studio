@@ -6,21 +6,8 @@
 
 import { ai } from '@/ai/genkit';
 import { z } from 'genkit';
+import { ReportSummaryInputSchema, ReportSummaryOutputSchema, type ReportSummaryInput, type ReportSummaryOutput } from '@/lib/types';
 
-export const ReportSummaryInputSchema = z.object({
-  unitName: z.string().describe('The name of the rental unit or "All Units".'),
-  month: z.string().describe('The month of the report (e.g., "January").'),
-  year: z.number().describe('The year of the report (e.g., 2024).'),
-  totalRevenue: z.number().describe('The total revenue for the month.'),
-  totalExpenses: z.number().describe('The total expenses for the month.'),
-  netProfit: z.number().describe('The net profit for the month.'),
-});
-export type ReportSummaryInput = z.infer<typeof ReportSummaryInputSchema>;
-
-export const ReportSummaryOutputSchema = z.object({
-  summary: z.string().describe('A concise, insightful summary of the monthly report.'),
-});
-export type ReportSummaryOutput = z.infer<typeof ReportSummaryOutputSchema>;
 
 const reportSummaryPrompt = ai.definePrompt({
   name: 'reportSummaryPrompt',
