@@ -4,7 +4,7 @@
  * @fileOverview A Genkit flow for sending a notification to a Discord channel via a webhook.
  */
 
-import { ai } from '../../../src/ai/genkit';
+import { ai } from '../genkit'; // Corrected import path
 import { z } from 'zod';
 
 // Input schema
