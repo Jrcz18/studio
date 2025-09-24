@@ -70,7 +70,6 @@ export type Agent = {
     phone: string;
     commissionType: 'percentage' | 'fixed_commission';
     commissionRate: number; // For percentage
-    commissionMarkup: number; // For fixed markup
     totalBookings: number;
     totalCommissions: number;
     joinDate: string;

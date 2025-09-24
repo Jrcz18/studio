@@ -48,7 +48,6 @@ export function AddAgentDialog({
   const [commissionType, setCommissionType] =
     useState<Agent['commissionType']>('percentage');
   const [commissionRate, setCommissionRate] = useState(0);
-  const [commissionMarkup, setCommissionMarkup] = useState(0);
   const [joinDate, setJoinDate] = useState('');
 
   useEffect(() => {
@@ -59,7 +58,6 @@ export function AddAgentDialog({
         setPhone(agent.phone);
         setCommissionType(agent.commissionType || 'percentage');
         setCommissionRate(agent.commissionRate || 0);
-        setCommissionMarkup(agent.commissionMarkup || 0);
         setJoinDate(agent.joinDate);
       } else {
         // Reset form for new agent
@@ -68,7 +66,6 @@ export function AddAgentDialog({
         setPhone('');
         setCommissionType('percentage');
         setCommissionRate(0);
-        setCommissionMarkup(0);
         setJoinDate(new Date().toISOString().split('T')[0]);
       }
     }
@@ -82,7 +79,6 @@ export function AddAgentDialog({
       phone,
       commissionType,
       commissionRate,
-      commissionMarkup,
       joinDate,
     };
 
@@ -181,22 +177,8 @@ export function AddAgentDialog({
               />
             </div>
           ) : (
-            <div className="grid grid-cols-4 items-center gap-4">
-              <Label htmlFor="agentMarkup" className="text-right">
-                Standard Price (₱)
-              </Label>
-              <Input
-                id="agentMarkup"
-                type="number"
-                min="0"
-                step="50"
-                className="col-span-3"
-                value={commissionMarkup}
-                onChange={(e) =>
-                  setCommissionMarkup(parseFloat(e.target.value))
-                }
-                required
-              />
+             <div className="col-span-4 bg-yellow-50 border border-yellow-200 rounded-lg p-3 text-sm text-yellow-800">
+                <strong>Fixed Commission:</strong> Agents will earn the surplus amount when they book a unit for a price higher than its base rate. No percentage rate is needed.
             </div>
           )}
           <div className="grid grid-cols-4 items-center gap-4">

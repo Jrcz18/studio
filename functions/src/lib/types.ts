@@ -47,7 +47,6 @@ export type Agent = {
     phone: string;
     commissionType: 'percentage' | 'fixed_commission';
     commissionRate: number;
-    commissionMarkup: number;
     totalBookings: number;
     totalCommissions: number;
     joinDate: string;
