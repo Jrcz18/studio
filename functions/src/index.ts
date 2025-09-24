@@ -7,7 +7,7 @@ import { config } from 'dotenv';
 import { sendDiscordNotificationFlow } from './ai/flows/send-discord-notification';
 import { getFirebaseAdmin } from './lib/firebase-admin';
 import { CollectionReference } from 'firebase-admin/firestore';
-import type { Booking, Unit, AppNotification, Agent, Investor } from './lib/types';
+import type { Booking, Unit, AppNotification, Agent, Investor, Expense } from './lib/types';
 
 
 config();
@@ -57,6 +57,9 @@ async function createNotification(notificationData: Omit<AppNotification, 'id'>)
 
 // Handle Discord Notification Flow
 app.post('/sendDiscordNotification', async (req, res) => {
+    if (!adminDb) {
+        return res.status(500).json({ error: 'Database not initialized.' });
+    }
     try {
         const result = await sendDiscordNotificationFlow(req.body);
         res.json(result);
@@ -156,6 +159,22 @@ app.post('/booking', async (req, res) => {
     } catch (error: any) {
         console.error('Error creating booking:', error);
         res.status(500).json({ error: 'Failed to create booking' });
+    }
+});
+
+// Handle Expense Creation
+app.post('/expense', async (req, res) => {
+    if (!adminDb) {
+        return res.status(500).json({ error: 'Database not initialized.' });
+    }
+    try {
+        const newExpense: Omit<Expense, 'id'> = req.body;
+        const expensesCollection = adminDb.collection('expenses');
+        const docRef = await expensesCollection.add(newExpense);
+        res.status(201).json({ id: docRef.id });
+    } catch (error: any) {
+        console.error('Error creating expense:', error);
+        res.status(500).json({ error: 'Failed to create expense' });
     }
 });
 

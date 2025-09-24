@@ -2,10 +2,11 @@
 'use client';
 
 import { db } from '@/lib/firebase';
-import { collection, getDocs, addDoc, doc, updateDoc, deleteDoc } from 'firebase/firestore';
+import { collection, getDocs, doc, updateDoc, deleteDoc } from 'firebase/firestore';
 import type { Expense } from '@/lib/types';
 
 const expensesCollectionRef = collection(db, 'expenses');
+const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL;
 
 // CLIENT-SIDE functions
 export async function getExpenses(): Promise<Expense[]> {
@@ -14,8 +15,23 @@ export async function getExpenses(): Promise<Expense[]> {
 }
 
 export async function addExpense(expenseData: Omit<Expense, 'id'>): Promise<string> {
-    const docRef = await addDoc(expensesCollectionRef, expenseData);
-    return docRef.id;
+    if (!API_BASE_URL) {
+        throw new Error("API base URL is not configured.");
+    }
+    const response = await fetch(`${API_BASE_URL}/expense`, {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(expenseData),
+    });
+
+    if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error || 'Failed to add expense via backend');
+    }
+    const result = await response.json();
+    return result.id;
 }
 
 export async function updateExpense(expenseData: Expense): Promise<void> {
