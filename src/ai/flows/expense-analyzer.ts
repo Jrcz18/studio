@@ -42,19 +42,6 @@ export type ExpenseAnalysisOutput = z.infer<typeof ExpenseAnalysisOutputSchema>;
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL;
 
 export async function analyzeExpense(input: ExpenseAnalysisInput): Promise<ExpenseAnalysisOutput> {
-    // TODO: Backend functionality is temporarily disabled until Firebase billing is enabled.
-    // This is a placeholder response.
-    console.log("Called analyzeExpense with:", input);
-    await new Promise(resolve => setTimeout(resolve, 500)); // Simulate network delay
-    // Fallback to a default category and no anomaly.
-    return {
-        category: 'other',
-        isAnomaly: false,
-        anomalyReason: 'AI analysis is temporarily disabled.'
-    };
-
-    /*
-    // Original code to be re-enabled later
     const res = await fetch(`${API_BASE_URL}/analyzeExpense`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -65,5 +52,4 @@ export async function analyzeExpense(input: ExpenseAnalysisInput): Promise<Expen
         throw new Error(error.message || 'Request failed');
     }
     return res.json();
-    */
 }

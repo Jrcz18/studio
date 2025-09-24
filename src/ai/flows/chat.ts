@@ -30,16 +30,6 @@ export type ChatOutput = z.infer<typeof ChatOutputSchema>;
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL;
 
 export async function chat(input: ChatInput): Promise<ChatOutput> {
-    // TODO: Backend functionality is temporarily disabled until Firebase billing is enabled.
-    // This is a placeholder response.
-    console.log("AI chat called with:", input.prompt);
-    await new Promise(resolve => setTimeout(resolve, 1000)); // Simulate network delay
-    return {
-        response: "AI chat is temporarily disabled. To enable it, please upgrade your Firebase project to the 'Blaze' (Pay-as-you-go) plan and deploy the backend functions."
-    };
-
-    /*
-    // Original code to be re-enabled later
     const res = await fetch(`${API_BASE_URL}/chat`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -50,5 +40,4 @@ export async function chat(input: ChatInput): Promise<ChatOutput> {
         throw new Error(error.message || 'AI chat request failed');
     }
     return res.json();
-    */
 }

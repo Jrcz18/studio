@@ -74,13 +74,7 @@ export default function BookingsPage() {
       setBookings((prev) => [...prev, fullBooking]);
 
       if (options.sendAdminEmail) {
-        // TODO: This feature is temporarily disabled until Firebase Functions are deployed.
-        // await sendNotificationEmail(fullBooking);
-        toast({
-          title: 'Admin Notification Disabled',
-          description: 'Please deploy backend functions to enable admin notifications.',
-          variant: 'destructive'
-        })
+        await sendNotificationEmail(fullBooking);
       }
       return true; // Indicate success
     } catch (error: any) {

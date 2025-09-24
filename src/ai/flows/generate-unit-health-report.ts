@@ -26,18 +26,6 @@ export type UnitHealthReportOutput = z.infer<typeof UnitHealthReportOutputSchema
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL;
 
 export async function generateUnitHealthReport(input: UnitHealthReportInput): Promise<UnitHealthReportOutput> {
-    // TODO: Backend functionality is temporarily disabled until Firebase billing is enabled.
-    // This is a placeholder response.
-    console.log("Called generateUnitHealthReport with:", input);
-    await new Promise(resolve => setTimeout(resolve, 500)); // Simulate network delay
-    return {
-        healthScore: 75,
-        summary: `AI Health Report for ${input.unitName} is temporarily disabled. Please enable billing and deploy Firebase Functions to activate this feature.`,
-        recommendations: ["Enable Firebase Functions to see real recommendations."],
-    };
-
-    /*
-    // Original code to be re-enabled later
     const res = await fetch(`${API_BASE_URL}/generateUnitHealthReport`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -48,5 +36,4 @@ export async function generateUnitHealthReport(input: UnitHealthReportInput): Pr
         throw new Error(error.message || 'Request failed');
     }
     return res.json();
-    */
 }

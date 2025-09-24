@@ -28,16 +28,6 @@ export type AdminNotificationOutput = z.infer<typeof AdminNotificationOutputSche
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL;
 
 export async function sendAdminBookingNotification(input: AdminNotificationInput): Promise<AdminNotificationOutput> {
-    // TODO: Backend functionality is temporarily disabled until Firebase billing is enabled.
-    // This is a placeholder response.
-    console.log("Called sendAdminBookingNotification with:", input);
-    await new Promise(resolve => setTimeout(resolve, 500)); // Simulate network delay
-    return {
-        message: "Admin notification is temporarily disabled. Please enable billing and deploy Firebase Functions to activate this feature."
-    };
-
-    /*
-    // Original code to be re-enabled later
     const res = await fetch(`${API_BASE_URL}/sendAdminBookingNotification`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -48,5 +38,4 @@ export async function sendAdminBookingNotification(input: AdminNotificationInput
         throw new Error(error.message || 'Request failed');
     }
     return res.json();
-    */
 }

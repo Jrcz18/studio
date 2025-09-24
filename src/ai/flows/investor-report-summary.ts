@@ -29,16 +29,6 @@ export type InvestorReportSummaryOutput = z.infer<typeof InvestorReportSummaryOu
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL;
 
 export async function generateInvestorReportSummary(input: InvestorReportSummaryInput): Promise<InvestorReportSummaryOutput> {
-    // TODO: Backend functionality is temporarily disabled until Firebase billing is enabled.
-    // This is a placeholder response.
-    console.log("Called generateInvestorReportSummary with:", input);
-    await new Promise(resolve => setTimeout(resolve, 500)); // Simulate network delay
-    return {
-        summary: `AI summary for ${input.investorName} is temporarily disabled. Please enable billing and deploy Firebase Functions to activate this feature.`,
-    };
-
-    /*
-    // Original code to be re-enabled later
     const res = await fetch(`${API_BASE_URL}/generateInvestorReportSummary`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -49,5 +39,4 @@ export async function generateInvestorReportSummary(input: InvestorReportSummary
         throw new Error(error.message || 'Request failed');
     }
     return res.json();
-    */
 }
