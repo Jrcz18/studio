@@ -1,9 +1,10 @@
+
 'use server';
 /**
  * @fileOverview A Genkit flow for sending a notification to a Discord channel via a webhook.
  */
 
-import { ai } from '@/ai/genkit';
+import { ai } from '../../../src/ai/genkit';
 import { z } from 'zod';
 
 // Input schema
