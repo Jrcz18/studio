@@ -1,6 +1,7 @@
 
 'use server';
-import functions from 'firebase-functions';
+
+import { onRequest } from 'firebase-functions/v2/https';
 import express from 'express';
 import cors from 'cors';
 import { config } from 'dotenv';
@@ -192,4 +193,4 @@ app.use((err: Error, req: express.Request, res: express.Response, next: express.
 });
 
 // Export the API
-export const api = functions.region('asia-southeast1').https.onRequest(app);
+export const api = onRequest({ region: 'asia-southeast1' }, app);
