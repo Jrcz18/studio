@@ -43,6 +43,45 @@ app.post('/sendAdminBookingNotification', handleFlow('sendAdminNotificationFlow'
 app.post('/sendDiscordNotification', handleFlow('sendDiscordNotificationFlow', './ai/flows/send-discord-notification'));
 
 
+// Booking Creation Endpoint with Conflict Check
+app.post('/booking', async (req, res) => {
+    try {
+        const { adminDb } = await getFirebaseAdmin();
+        const newBooking = req.body as Omit<Booking, 'id'>;
+
+        // --- Conflict Detection Logic ---
+        const bookingsRef = adminDb.collection('bookings');
+        const q = await bookingsRef.where('unitId', '==', newBooking.unitId).get();
+        
+        const existingBookings = q.docs.map(doc => doc.data() as Booking);
+        const newStart = new Date(newBooking.checkinDate);
+        const newEnd = new Date(newBooking.checkoutDate);
+
+        for (const existing of existingBookings) {
+            const existingStart = new Date(existing.checkinDate);
+            const existingEnd = new Date(existing.checkoutDate);
+            // Check for overlap: (StartA <= EndB) and (EndA >= StartB)
+            if (newStart < existingEnd && newEnd > existingStart) {
+                // Conflict found, return 409 status with conflicting booking details
+                return res.status(409).json({
+                    error: 'Booking conflict',
+                    message: 'The selected dates overlap with an existing booking.',
+                    existingBooking: existing,
+                });
+            }
+        }
+        // --- End of Conflict Detection ---
+
+        const docRef = await adminDb.collection('bookings').add(newBooking);
+        res.status(201).json({ id: docRef.id });
+
+    } catch (error: any) {
+        console.error('Error creating booking:', error);
+        res.status(500).json({ error: 'Failed to create booking' });
+    }
+});
+
+
 // Unit Creation Endpoint
 app.post('/unit', async (req, res) => {
     try {
