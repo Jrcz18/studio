@@ -56,8 +56,42 @@ app.post('/unit', async (req, res) => {
     }
 });
 
+// Master iCal Generation Endpoint (All Units)
+app.get('/ical/all', async (req, res) => {
+    try {
+        const { adminDb } = await getFirebaseAdmin();
+        
+        const unitsSnapshot = await adminDb.collection('units').get();
+        const units = unitsSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Unit));
+        const unitMap = new Map(units.map(unit => [unit.id, unit.name]));
 
-// iCal Generation Endpoint
+        const bookingsSnapshot = await adminDb.collection('bookings').get();
+        const bookings = bookingsSnapshot.docs.map(doc => doc.data() as Booking);
+
+        const calendar = ical({ name: 'All Bookings - Manila Prime' });
+
+        bookings.forEach(booking => {
+            const unitName = unitMap.get(booking.unitId) || 'Unknown Unit';
+            calendar.createEvent({
+                start: new Date(booking.checkinDate),
+                end: new Date(booking.checkoutDate),
+                summary: `${unitName}: ${booking.guestFirstName} ${booking.guestLastName}`,
+                description: `Guests: ${booking.adults} adults, ${booking.children} children. Status: ${booking.paymentStatus}`,
+            });
+        });
+        
+        res.setHeader('Content-Type', 'text/calendar;charset=utf-8');
+        res.setHeader('Content-Disposition', `attachment; filename="master_calendar.ics"`);
+        res.send(calendar.toString());
+
+    } catch (error: any) {
+        console.error("Failed to generate master iCal feed:", error);
+        res.status(500).send("Error generating master iCal feed.");
+    }
+});
+
+
+// iCal Generation Endpoint (Per Unit)
 app.get('/ical/:unitId', async (req, res) => {
     try {
         const { unitId } = req.params;
@@ -100,4 +134,3 @@ app.use((err: Error, req: express.Request, res: express.Response, next: express.
 });
 
 export const api = functions.region('asia-southeast1').https.onRequest(app);
-
