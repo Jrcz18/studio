@@ -16,14 +16,35 @@ const app = express();
 app.use(cors({ origin: true }));
 app.use(express.json());
 
-// Initialize Firebase Admin SDK
+// --- Firebase Admin SDK Initialization ---
 let adminDb: FirebaseFirestore.Firestore;
-getFirebaseAdmin().then(admin => {
+const adminInitPromise = getFirebaseAdmin().then(admin => {
     adminDb = admin.adminDb;
-    console.log('Firebase Admin initialized for endpoints.');
+    console.log('Firebase Admin initialized successfully for all endpoints.');
 }).catch(error => {
-    console.error('Failed to initialize Firebase Admin:', error);
+    console.error('CRITICAL: Failed to initialize Firebase Admin SDK:', error);
+    // The process will exit if the admin SDK fails to initialize, preventing the app from running in a broken state.
+    process.exit(1); 
 });
+
+// --- Middleware to ensure DB is initialized ---
+const ensureDbInitialized = async (req: express.Request, res: express.Response, next: express.NextFunction) => {
+    if (!adminDb) {
+        try {
+            await adminInitPromise; // Wait for the initialization to complete
+            if (!adminDb) {
+               // This case should ideally not be reached due to the process.exit in the catch block
+               return res.status(500).json({ error: 'Database not initialized and failed to initialize.' });
+            }
+        } catch (error) {
+             return res.status(500).json({ error: 'Failed to initialize database connection.' });
+        }
+    }
+    next(); // Proceed to the actual route handler
+};
+
+// Apply the middleware to all routes
+app.use(ensureDbInitialized);
 
 
 // Helper function to check for booking conflicts
@@ -57,9 +78,6 @@ async function createNotification(notificationData: Omit<AppNotification, 'id'>)
 
 // Handle Discord Notification Flow
 app.post('/sendDiscordNotification', async (req, res) => {
-    if (!adminDb) {
-        return res.status(500).json({ error: 'Database not initialized.' });
-    }
     try {
         const result = await sendDiscordNotificationFlow(req.body);
         res.json(result);
@@ -72,15 +90,12 @@ app.post('/sendDiscordNotification', async (req, res) => {
 
 // Handle Unit Creation
 app.post('/unit', async (req, res) => {
-    if (!adminDb) {
-        return res.status(500).json({ error: 'Database not initialized.' });
-    }
     try {
         const newUnit: Omit<Unit, 'id'> = req.body;
         const unitsCollection = adminDb.collection('units');
         const docRef = await unitsCollection.add(newUnit);
         res.status(201).json({ id: docRef.id });
-    } catch (error: any) {
+    } catch (error: any) => {
         console.error('Error creating unit:', error);
         res.status(500).json({ error: 'Failed to create unit' });
     }
@@ -88,9 +103,6 @@ app.post('/unit', async (req, res) => {
 
 // Handle Agent Creation
 app.post('/agent', async (req, res) => {
-    if (!adminDb) {
-        return res.status(500).json({ error: 'Database not initialized.' });
-    }
     try {
         const newAgent: Omit<Agent, 'id'> = req.body;
         const agentsCollection = adminDb.collection('agents');
@@ -105,9 +117,6 @@ app.post('/agent', async (req, res) => {
 
 // Handle Investor Creation
 app.post('/investor', async (req, res) => {
-    if (!adminDb) {
-        return res.status(500).json({ error: 'Database not initialized.' });
-    }
     try {
         const newInvestor: Omit<Investor, 'id'> = req.body;
         const investorsCollection = adminDb.collection('investors');
@@ -122,9 +131,6 @@ app.post('/investor', async (req, res) => {
 
 // Handle Booking Creation
 app.post('/booking', async (req, res) => {
-    if (!adminDb) {
-        return res.status(500).json({ error: 'Database not initialized.' });
-    }
     try {
         const newBooking: Omit<Booking, 'id'> = req.body;
 
@@ -164,9 +170,6 @@ app.post('/booking', async (req, res) => {
 
 // Handle Expense Creation
 app.post('/expense', async (req, res) => {
-    if (!adminDb) {
-        return res.status(500).json({ error: 'Database not initialized.' });
-    }
     try {
         const newExpense: Omit<Expense, 'id'> = req.body;
         const expensesCollection = adminDb.collection('expenses');
