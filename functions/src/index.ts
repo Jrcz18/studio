@@ -7,7 +7,7 @@ import { config } from 'dotenv';
 import { sendDiscordNotificationFlow } from './ai/flows/send-discord-notification';
 import { getFirebaseAdmin } from './lib/firebase-admin';
 import { CollectionReference } from 'firebase-admin/firestore';
-import type { Booking, Unit, AppNotification, Agent, Investor, Expense, ProfitPayment } from './lib/types';
+import type { Booking, Unit, AppNotification, Agent, Investor } from './lib/types';
 
 
 config();
@@ -166,4 +166,3 @@ app.use((err: Error, req: express.Request, res: express.Response, next: express.
 });
 
 export const api = functions.region('asia-southeast1').https.onRequest(app);
-

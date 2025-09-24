@@ -24,10 +24,7 @@ export async function getUnit(unitId: string): Promise<Unit | null> {
 
 export async function addUnit(unitData: Omit<Unit, 'id'>): Promise<string> {
     if (!API_BASE_URL) {
-        // Fallback to direct Firestore write if API is not configured
-        console.warn("API_BASE_URL not configured. Falling back to direct Firestore write. Calendar sync will not be initialized.");
-        const docRef = await addDoc(collection(db, 'units'), unitData);
-        return docRef.id;
+        throw new Error("API_BASE_URL not configured. Cannot add unit.");
     }
     
     const response = await fetch(`${API_BASE_URL}/unit`, {
