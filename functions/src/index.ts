@@ -184,5 +184,4 @@ app.use((err: Error, req: express.Request, res: express.Response, next: express.
     res.status(500).json({ error: 'Something went wrong!', message: err.message });
 });
 
-const functionsV1 = functions.region('asia-southeast1');
-export const api = functionsV1.https.onRequest(app);
+export const api = functions.region('asia-southeast1').https.onRequest(app);
