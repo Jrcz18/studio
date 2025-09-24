@@ -1,10 +1,12 @@
+
 'use client';
 
 import { db } from '@/lib/firebase';
-import { collection, getDocs, doc, updateDoc, deleteDoc, getDoc } from 'firebase/firestore';
+import { collection, getDocs, doc, updateDoc, deleteDoc, getDoc, addDoc } from 'firebase/firestore';
 import type { Unit } from '@/lib/types';
 
 const unitsCollection = collection(db, 'units');
+const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL;
 
 export async function getUnits(): Promise<Unit[]> {
     const snapshot = await getDocs(unitsCollection);
@@ -21,7 +23,14 @@ export async function getUnit(unitId: string): Promise<Unit | null> {
 }
 
 export async function addUnit(unitData: Omit<Unit, 'id'>): Promise<string> {
-    const response = await fetch('https://mpbookingserver.vercel.app/api/unit', {
+    if (!API_BASE_URL) {
+        // Fallback to direct Firestore write if API is not configured
+        console.warn("API_BASE_URL not configured. Falling back to direct Firestore write. Calendar sync will not be initialized.");
+        const docRef = await addDoc(collection(db, 'units'), unitData);
+        return docRef.id;
+    }
+    
+    const response = await fetch(`${API_BASE_URL}/unit`, {
         method: 'POST',
         headers: {
             'Content-Type': 'application/json',

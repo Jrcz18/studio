@@ -8,6 +8,7 @@ import { addNotification } from './notifications';
 import { auth } from '@/lib/firebase';
 
 const bookingsCollectionRef = collection(db, 'bookings');
+const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL;
 
 // CLIENT-SIDE functions
 export async function getBookings(): Promise<Booking[]> {
@@ -16,7 +17,10 @@ export async function getBookings(): Promise<Booking[]> {
 }
 
 export async function addBooking(bookingData: Omit<Booking, 'id'>): Promise<string> {
-    const response = await fetch('https://mpbookingserver.vercel.app/api/booking', {
+    if (!API_BASE_URL) {
+        throw new Error("API base URL is not configured. Cannot create booking.");
+    }
+    const response = await fetch(`${API_BASE_URL}/booking`, {
         method: 'POST',
         headers: {
             'Content-Type': 'application/json',
