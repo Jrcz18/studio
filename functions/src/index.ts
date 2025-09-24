@@ -7,7 +7,7 @@ import { config } from 'dotenv';
 import { sendDiscordNotificationFlow } from './ai/flows/send-discord-notification';
 import { getFirebaseAdmin } from './lib/firebase-admin';
 import { CollectionReference } from 'firebase-admin/firestore';
-import type { Booking, Unit, AppNotification } from './lib/types';
+import type { Booking, Unit, AppNotification, Agent, Investor, Expense, ProfitPayment } from './lib/types';
 
 
 config();
@@ -80,6 +80,39 @@ app.post('/unit', async (req, res) => {
     } catch (error: any) {
         console.error('Error creating unit:', error);
         res.status(500).json({ error: 'Failed to create unit' });
+    }
+});
+
+// Handle Agent Creation
+app.post('/agent', async (req, res) => {
+    if (!adminDb) {
+        return res.status(500).json({ error: 'Database not initialized.' });
+    }
+    try {
+        const newAgent: Omit<Agent, 'id'> = req.body;
+        const agentsCollection = adminDb.collection('agents');
+        const docRef = await agentsCollection.add(newAgent);
+        res.status(201).json({ id: docRef.id });
+    } catch (error: any) {
+        console.error('Error creating agent:', error);
+        res.status(500).json({ error: 'Failed to create agent' });
+    }
+});
+
+
+// Handle Investor Creation
+app.post('/investor', async (req, res) => {
+    if (!adminDb) {
+        return res.status(500).json({ error: 'Database not initialized.' });
+    }
+    try {
+        const newInvestor: Omit<Investor, 'id'> = req.body;
+        const investorsCollection = adminDb.collection('investors');
+        const docRef = await investorsCollection.add(newInvestor);
+        res.status(201).json({ id: docRef.id });
+    } catch (error: any) {
+        console.error('Error creating investor:', error);
+        res.status(500).json({ error: 'Failed to create investor' });
     }
 });
 
