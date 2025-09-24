@@ -28,14 +28,14 @@ const handleFlow = (flowName: string, modulePath: string) => async (req: express
 };
 
 // Define endpoints using the lazy-loading helper
-app.post('/chat', handleFlow('chatFlow', '@/ai/flows/chat'));
-app.post('/analyzeExpense', handleFlow('expenseAnalysisFlow', '@/ai/flows/expense-analyzer'));
-app.post('/resolveConflict', handleFlow('resolveConflictFlow', '@/ai/flows/resolve-conflict'));
-app.post('/generateReportSummary', handleFlow('generateReportSummaryFlow', '@/ai/flows/report-summary'));
-app.post('/generateAgentReportSummary', handleFlow('generateAgentReportSummaryFlow', '@/ai/flows/agent-report-summary'));
-app.post('/generateInvestorReportSummary', handleFlow('generateInvestorReportSummaryFlow', '@/ai/flows/investor-report-summary'));
-app.post('/generateUnitHealthReport', handleFlow('generateUnitHealthReportFlow', '@/ai/flows/generate-unit-health-report'));
-app.post('/sendAdminBookingNotification', handleFlow('sendAdminNotificationFlow', '@/ai/flows/send-admin-notification'));
+app.post('/chat', handleFlow('chatFlow', './ai/flows/chat'));
+app.post('/analyzeExpense', handleFlow('expenseAnalysisFlow', './ai/flows/expense-analyzer'));
+app.post('/resolveConflict', handleFlow('resolveConflictFlow', './ai/flows/resolve-conflict'));
+app.post('/generateReportSummary', handleFlow('generateReportSummaryFlow', './ai/flows/report-summary'));
+app.post('/generateAgentReportSummary', handleFlow('generateAgentReportSummaryFlow', './ai/flows/agent-report-summary'));
+app.post('/generateInvestorReportSummary', handleFlow('generateInvestorReportSummaryFlow', './ai/flows/investor-report-summary'));
+app.post('/generateUnitHealthReport', handleFlow('generateUnitHealthReportFlow', './ai/flows/generate-unit-health-report'));
+app.post('/sendAdminBookingNotification', handleFlow('sendAdminNotificationFlow', './ai/flows/send-admin-notification'));
 
 
 app.use((err: Error, req: express.Request, res: express.Response, next: express.NextFunction) => {
@@ -43,4 +43,5 @@ app.use((err: Error, req: express.Request, res: express.Response, next: express.
     res.status(500).json({ error: 'Something went wrong!', message: err.message });
 });
 
-export const api = functions.https.onRequest(app);
+// Set the region to asia-southeast1
+export const api = functions.region('asia-southeast1').https.onRequest(app);
