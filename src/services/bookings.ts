@@ -6,6 +6,8 @@ import { collection, getDocs, addDoc, deleteDoc, doc, updateDoc } from 'firebase
 import type { Booking } from '@/lib/types';
 import { addNotification } from './notifications';
 import { auth } from '@/lib/firebase';
+import { sendDiscordNotification } from '@/ai/flows/send-discord-notification';
+
 
 const bookingsCollectionRef = collection(db, 'bookings');
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL;
@@ -40,7 +42,7 @@ export async function addBooking(bookingData: Omit<Booking, 'id'>): Promise<stri
     const result = await response.json();
     const bookingId = result.id;
 
-    // Create a notification
+    // Create a notification in the app
     const user = auth.currentUser;
     if (user) {
         await addNotification({
@@ -53,6 +55,16 @@ export async function addBooking(bookingData: Omit<Booking, 'id'>): Promise<stri
             data: { bookingId }
         });
     }
+
+     // Send Discord notification
+    try {
+        await sendDiscordNotification({
+            content: `📅 **New Booking!**\n\n**Guest:** ${bookingData.guestFirstName} ${bookingData.guestLastName}\n**Check-in:** ${bookingData.checkinDate}\n**Check-out:** ${bookingData.checkoutDate}\n**Amount:** ₱${bookingData.totalAmount.toLocaleString()}`
+        });
+    } catch (e) {
+        console.warn("Failed to send Discord notification for new booking.", e);
+    }
+
 
     return bookingId;
 }

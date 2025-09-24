@@ -337,3 +337,18 @@ export const AdminNotificationOutputSchema = z.object({
   message: z.string(),
 });
 export type AdminNotificationOutput = z.infer<typeof AdminNotificationOutputSchema>;
+
+
+// send-discord-notification.ts
+export const DiscordNotificationInputSchema = z.object({
+  content: z.string().describe('The message content to send to Discord.'),
+  username: z.string().optional().describe('An optional username to override the webhook default.'),
+  avatar_url: z.string().optional().describe('An optional avatar URL to override the webhook default.'),
+});
+export type DiscordNotificationInput = z.infer<typeof DiscordNotificationInputSchema>;
+
+export const DiscordNotificationOutputSchema = z.object({
+  success: z.boolean().describe('Whether the message was sent successfully.'),
+  message: z.string().describe('A status message.'),
+});
+export type DiscordNotificationOutput = z.infer<typeof DiscordNotificationOutputSchema>;

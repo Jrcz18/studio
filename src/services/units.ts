@@ -4,6 +4,8 @@
 import { db } from '@/lib/firebase';
 import { collection, getDocs, doc, updateDoc, deleteDoc, getDoc, addDoc } from 'firebase/firestore';
 import type { Unit } from '@/lib/types';
+import { sendDiscordNotification } from '@/ai/flows/send-discord-notification';
+
 
 const unitsCollection = collection(db, 'units');
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL;
@@ -44,6 +46,16 @@ export async function addUnit(unitData: Omit<Unit, 'id'>): Promise<string> {
     }
 
     const result = await response.json();
+    
+    // Send Discord notification
+    try {
+        await sendDiscordNotification({
+            content: `🎉 **New Unit Added!** 🎉\n\n**Name:** ${unitData.name}\n**Type:** ${unitData.type}\n**Rate:** ₱${unitData.rate.toLocaleString()}`
+        });
+    } catch (e) {
+        console.warn("Failed to send Discord notification for new unit.", e);
+    }
+
     return result.id;
 }
 
@@ -58,3 +70,4 @@ export async function deleteUnit(unitId: string): Promise<void> {
     const unitDoc = doc(db, 'units', unitId);
     await deleteDoc(unitDoc);
 }
+

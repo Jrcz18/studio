@@ -29,9 +29,17 @@ export function UnitsList({ units, onEdit, onDelete }: UnitsListProps) {
 
 function UnitCard({ unit, onEdit, onDelete }: { unit: Unit, onEdit: (unit: Unit) => void, onDelete: (unitId: string) => void }) {
   const [masterUrlCopied, setMasterUrlCopied] = useState(false);
+  const [apiUrl, setApiUrl] = useState('');
+
+  useEffect(() => {
+    // This ensures the environment variable is only read on the client side
+    setApiUrl(process.env.NEXT_PUBLIC_API_BASE_URL || '');
+  }, []);
+
 
   const handleCopyMasterUrl = () => {
-    const url = `https://mpbookingserver.vercel.app/api/ical/${unit.id}`;
+    if (!apiUrl) return;
+    const url = `${apiUrl}/ical/${unit.id}`;
     navigator.clipboard.writeText(url);
     setMasterUrlCopied(true);
     setTimeout(() => setMasterUrlCopied(false), 2000);
@@ -76,13 +84,14 @@ function UnitCard({ unit, onEdit, onDelete }: { unit: Unit, onEdit: (unit: Unit)
                 <input 
                   type="text" 
                   readOnly 
-                  value={`https://mpbookingserver.vercel.app/api/ical/${unit.id}`}
+                  value={apiUrl ? `${apiUrl}/ical/${unit.id}` : 'Loading URL...'}
                   className="p-2 text-sm bg-transparent w-full outline-none"
                 />
                 <button 
                   onClick={handleCopyMasterUrl}
                   className="p-2 text-gray-500 hover:text-gray-800"
                   title="Copy URL"
+                  disabled={!apiUrl}
                 >
                   {masterUrlCopied ? <Check className="w-5 h-5 text-green-600" /> : <Copy className="w-5 h-5" />}
                 </button>
@@ -127,3 +136,4 @@ function UnitCard({ unit, onEdit, onDelete }: { unit: Unit, onEdit: (unit: Unit)
     </div>
   );
 }
+
