@@ -30,13 +30,14 @@ export const sendDiscordNotificationFlow = ai.defineFlow(
     outputSchema: DiscordNotificationOutputSchema,
   },
   async (input) => {
+    // The secret is exposed as an environment variable at runtime.
     const webhookUrl = process.env.DISCORD_WEBHOOK_URL;
 
     if (!webhookUrl) {
-      console.error('DISCORD_WEBHOOK_URL is not set in environment variables.');
+      console.error('DISCORD_WEBHOOK_URL secret is not set in the function environment.');
       return {
         success: false,
-        message: 'Discord webhook URL is not configured on the server.',
+        message: 'Discord webhook URL is not configured on the server. Please set the DISCORD_WEBHOOK_URL secret.',
       };
     }
 
