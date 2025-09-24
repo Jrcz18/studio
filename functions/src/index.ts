@@ -95,7 +95,7 @@ app.post('/agent', async (req, res) => {
         const newAgent: Omit<Agent, 'id'> = req.body;
         const agentsCollection = adminDb.collection('agents');
         const docRef = await agentsCollection.add(newAgent);
-        res.status(201D).json({ id: docRef.id });
+        res.status(201).json({ id: docRef.id });
     } catch (error: any) {
         console.error('Error creating agent:', error);
         res.status(500).json({ error: 'Failed to create agent' });
