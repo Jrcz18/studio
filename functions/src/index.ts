@@ -1,7 +1,7 @@
 
 import * as functions from 'firebase-functions';
-import * as express from 'express';
-import * as cors from 'cors';
+import express from 'express';
+import cors from 'cors';
 import { config } from 'dotenv';
 import { genkit, z } from 'genkit';
 import { googleAI } from '@genkit-ai/googleai';
