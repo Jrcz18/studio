@@ -17,26 +17,16 @@ const app = express();
 app.use(cors({ origin: true }));
 app.use(express.json());
 
-// This will lazy-load and run the flow.
-// It's a placeholder for a more robust flow handling system.
-const runFlow = (flowName: string) => async (req: express.Request, res: express.Response) => {
+// Handle Discord Notification Flow
+app.post('/sendDiscordNotification', async (req, res) => {
     try {
-        // Assume flow is exported from a file with its name kebab-cased
-        const modulePath = `./ai/flows/${flowName.replace(/([A-Z])/g, "-$1").toLowerCase().substring(1)}`;
-        const module = await import(modulePath);
-        const flow = module[flowName];
-        if (typeof flow !== 'function') {
-            return res.status(404).json({ error: `Flow '${flowName}' not found.` });
-        }
-        const result = await flow(req.body);
+        const result = await sendDiscordNotificationFlow(req.body);
         res.json(result);
     } catch (error: any) {
-        console.error(`Error running flow ${flowName}:`, error);
+        console.error('Error running sendDiscordNotificationFlow:', error);
         res.status(500).json({ error: 'Something went wrong!' });
     }
-};
-
-app.post('/sendDiscordNotification', runFlow('sendDiscordNotificationFlow'));
+});
 
 
 // Booking Creation Endpoint with Conflict Check
