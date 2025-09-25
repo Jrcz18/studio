@@ -10,7 +10,6 @@ import { getFirebaseAdmin } from './lib/firebase-admin';
 import type { CollectionReference } from 'firebase-admin/firestore';
 import type { Booking, Unit, AppNotification, Agent, Investor, Expense } from './lib/types';
 
-
 config();
 
 const app = express();
@@ -19,179 +18,155 @@ app.use(express.json());
 
 // --- Firebase Admin SDK Initialization ---
 let adminDb: FirebaseFirestore.Firestore;
-// This promise will be awaited by middleware to ensure the DB is ready.
-const adminInitPromise = getFirebaseAdmin().then(admin => {
+
+// Promise that resolves when admin is ready
+const adminInitPromise = getFirebaseAdmin()
+  .then(admin => {
     adminDb = admin.adminDb;
     console.log('Firebase Admin initialized successfully for all endpoints.');
-}).catch(error => {
+  })
+  .catch(error => {
     console.error('CRITICAL: Failed to initialize Firebase Admin SDK:', error);
-    // Let the error propagate so the function fails cleanly if init fails.
-    // This will cause the function to fail deployment or execution if the admin SDK is not configured.
     throw error;
-});
+  });
 
 // --- Middleware to ensure DB is initialized before any request ---
-const ensureDbInitialized = async (req: express.Request, res: express.Response, next: express.NextFunction) => {
-    try {
-        if (!adminDb) {
-            await adminInitPromise; // Wait for the initialization promise to resolve
-        }
-        next(); // Proceed to the actual route handler
-    } catch (error) {
-         console.error('Database initialization check failed:', error);
-         return res.status(500).json({ error: 'Failed to initialize database connection.' });
-    }
+const ensureDbInitialized = (req: express.Request, res: express.Response, next: express.NextFunction): void => {
+  if (!adminDb) {
+    adminInitPromise
+      .then(() => next())
+      .catch(error => {
+        console.error('Database initialization check failed:', error);
+        res.status(500).json({ error: 'Failed to initialize database connection.' });
+      });
+  } else {
+    next();
+  }
 };
 
-// Apply the middleware to all routes in the Express app
 app.use(ensureDbInitialized);
 
-
-// Helper function to check for booking conflicts
+// --- Helper functions ---
 async function findBookingConflict(newBooking: Omit<Booking, 'id'>): Promise<Booking | null> {
-    const bookingsCollection = adminDb.collection('bookings') as CollectionReference<Booking>;
-    
-    // Find bookings for the same unit where the existing one's checkout is after the new one's check-in
-    const query1 = bookingsCollection
-        .where('unitId', '==', newBooking.unitId)
-        .where('checkoutDate', '>', newBooking.checkinDate);
-    
-    const snapshot = await query1.get();
+  const bookingsCollection = adminDb.collection('bookings') as CollectionReference<Booking>;
+  const snapshot = await bookingsCollection
+    .where('unitId', '==', newBooking.unitId)
+    .where('checkoutDate', '>', newBooking.checkinDate)
+    .get();
 
-    if (snapshot.empty) {
-        return null; // No potential conflicts
-    }
+  if (snapshot.empty) return null;
 
-    // Now, among the potential conflicts, find one where the existing one's check-in is before the new one's checkout
-    // This covers all overlap scenarios.
-    const conflictingBooking = snapshot.docs
-        .map(doc => ({ id: doc.id, ...doc.data() } as Booking))
-        .find(booking => booking.checkinDate < newBooking.checkoutDate);
-
-    return conflictingBooking || null;
+  return (
+    snapshot.docs
+      .map(doc => ({ id: doc.id, ...doc.data() } as Booking))
+      .find(booking => booking.checkinDate < newBooking.checkoutDate) || null
+  );
 }
 
-// Add a notification helper
 async function createNotification(notificationData: Omit<AppNotification, 'id'>): Promise<string> {
-    const docRef = await adminDb.collection('notifications').add({
-        ...notificationData,
-    });
-    return docRef.id;
+  const docRef = await adminDb.collection('notifications').add(notificationData);
+  return docRef.id;
 }
 
-
-// --- API ENDPOINTS ---
-
-// Handle Discord Notification Flow
+// --- API Endpoints ---
 app.post('/sendDiscordNotification', async (req, res) => {
-    try {
-        const result = await sendDiscordNotificationFlow(req.body);
-        return res.json(result);
-    } catch (error: any) {
-        console.error('Error running sendDiscordNotificationFlow:', error);
-        return res.status(500).json({ error: 'Something went wrong!' });
-    }
+  try {
+    const result = await sendDiscordNotificationFlow(req.body);
+    return res.json(result);
+  } catch (error: any) {
+    console.error('Error running sendDiscordNotificationFlow:', error);
+    return res.status(500).json({ error: 'Something went wrong!' });
+  }
 });
 
-
-// Handle Unit Creation
 app.post('/unit', async (req, res) => {
-    try {
-        const newUnit: Omit<Unit, 'id'> = req.body;
-        const unitsCollection = adminDb.collection('units');
-        const docRef = await unitsCollection.add(newUnit);
-        return res.status(201).json({ id: docRef.id });
-    } catch (error: any) {
-        console.error('Error creating unit:', error);
-        return res.status(500).json({ error: 'Failed to create unit' });
-    }
+  try {
+    const newUnit: Omit<Unit, 'id'> = req.body;
+    const docRef = await adminDb.collection('units').add(newUnit);
+    return res.status(201).json({ id: docRef.id });
+  } catch (error: any) {
+    console.error('Error creating unit:', error);
+    return res.status(500).json({ error: 'Failed to create unit' });
+  }
 });
 
-// Handle Agent Creation
 app.post('/agent', async (req, res) => {
-    try {
-        const newAgent: Omit<Agent, 'id'> = req.body;
-        const agentsCollection = adminDb.collection('agents');
-        const docRef = await agentsCollection.add(newAgent);
-        return res.status(201).json({ id: docRef.id });
-    } catch (error: any) {
-        console.error('Error creating agent:', error);
-        return res.status(500).json({ error: 'Failed to create agent' });
-    }
+  try {
+    const newAgent: Omit<Agent, 'id'> = req.body;
+    const docRef = await adminDb.collection('agents').add(newAgent);
+    return res.status(201).json({ id: docRef.id });
+  } catch (error: any) {
+    console.error('Error creating agent:', error);
+    return res.status(500).json({ error: 'Failed to create agent' });
+  }
 });
 
-
-// Handle Investor Creation
 app.post('/investor', async (req, res) => {
-    try {
-        const newInvestor: Omit<Investor, 'id'> = req.body;
-        const investorsCollection = adminDb.collection('investors');
-        const docRef = await investorsCollection.add(newInvestor);
-        return res.status(201).json({ id: docRef.id });
-    } catch (error: any) {
-        console.error('Error creating investor:', error);
-        return res.status(500).json({ error: 'Failed to create investor' });
-    }
+  try {
+    const newInvestor: Omit<Investor, 'id'> = req.body;
+    const docRef = await adminDb.collection('investors').add(newInvestor);
+    return res.status(201).json({ id: docRef.id });
+  } catch (error: any) {
+    console.error('Error creating investor:', error);
+    return res.status(500).json({ error: 'Failed to create investor' });
+  }
 });
 
-
-// Handle Booking Creation
 app.post('/booking', async (req, res) => {
-    try {
-        const newBooking: Omit<Booking, 'id'> = req.body;
+  try {
+    const newBooking: Omit<Booking, 'id'> = req.body;
 
-        const conflict = await findBookingConflict(newBooking);
-        if (conflict) {
-            return res.status(409).json({
-                error: 'Booking conflict detected.',
-                existingBooking: conflict,
-            });
-        }
-
-        const bookingsCollection = adminDb.collection('bookings');
-        const docRef = await bookingsCollection.add(newBooking);
-        
-        // Create a notification for the user who made the booking
-        if (newBooking.uid) {
-            const unitDoc = await adminDb.collection('units').doc(newBooking.unitId).get();
-            const unitName = unitDoc.data()?.name || 'the unit';
-            
-            await createNotification({
-                userId: newBooking.uid,
-                type: 'booking',
-                title: 'Booking Confirmed!',
-                description: `Your booking for ${unitName} from ${newBooking.checkinDate} to ${newBooking.checkoutDate} is confirmed.`,
-                createdAt: new Date().toISOString(),
-                isRead: false,
-                data: { bookingId: docRef.id, unitId: newBooking.unitId }
-            });
-        }
-        
-        return res.status(201).json({ id: docRef.id });
-    } catch (error: any) {
-        console.error('Error creating booking:', error);
-        return res.status(500).json({ error: 'Failed to create booking' });
+    const conflict = await findBookingConflict(newBooking);
+    if (conflict) {
+      return res.status(409).json({
+        error: 'Booking conflict detected.',
+        existingBooking: conflict,
+      });
     }
+
+    const docRef = await adminDb.collection('bookings').add(newBooking);
+
+    if (newBooking.uid) {
+      const unitDoc = await adminDb.collection('units').doc(newBooking.unitId).get();
+      const unitName = unitDoc.data()?.name || 'the unit';
+
+      await createNotification({
+        userId: newBooking.uid,
+        type: 'booking',
+        title: 'Booking Confirmed!',
+        description: `Your booking for ${unitName} from ${newBooking.checkinDate} to ${newBooking.checkoutDate} is confirmed.`,
+        createdAt: new Date().toISOString(),
+        isRead: false,
+        data: { bookingId: docRef.id, unitId: newBooking.unitId },
+      });
+    }
+
+    return res.status(201).json({ id: docRef.id });
+  } catch (error: any) {
+    console.error('Error creating booking:', error);
+    return res.status(500).json({ error: 'Failed to create booking' });
+  }
 });
 
-// Handle Expense Creation
 app.post('/expense', async (req, res) => {
-    try {
-        const newExpense: Omit<Expense, 'id'> = req.body;
-        const expensesCollection = adminDb.collection('expenses');
-        const docRef = await expensesCollection.add(newExpense);
-        return res.status(201).json({ id: docRef.id });
-    } catch (error: any) {
-        console.error('Error creating expense:', error);
-        return res.status(500).json({ error: 'Failed to create expense' });
-    }
+  try {
+    const newExpense: Omit<Expense, 'id'> = req.body;
+    const docRef = await adminDb.collection('expenses').add(newExpense);
+    return res.status(201).json({ id: docRef.id });
+  } catch (error: any) {
+    console.error('Error creating expense:', error);
+    return res.status(500).json({ error: 'Failed to create expense' });
+  }
 });
 
-// Generic Error Handler
+// --- Generic Error Handler ---
 app.use((err: Error, req: express.Request, res: express.Response, next: express.NextFunction) => {
-    console.error(err.stack);
-    return res.status(500).json({ error: 'Something went wrong!', message: err.message });
+  console.error(err.stack);
+  return res.status(500).json({ error: 'Something went wrong!', message: err.message });
 });
 
-// Export the API
-export const api = onRequest({ region: 'asia-southeast1', secrets: ["SERVICE_ACCOUNT_KEY", "DISCORD_WEBHOOK_URL"] }, app);
+// --- Export the API (Firebase v2) ---
+export const api = onRequest(
+  { region: 'asia-southeast1', secrets: ['SERVICE_ACCOUNT_KEY', 'DISCORD_WEBHOOK_URL'] },
+  app
+);
