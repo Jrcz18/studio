@@ -17,28 +17,21 @@ app.use(cors({ origin: true }));
 app.use(express.json());
 
 // --- Firebase Admin SDK Initialization ---
-let adminDb: FirebaseFirestore.Firestore;
-
-// Promise that resolves when admin is ready
-const adminInitPromise = getFirebaseAdmin()
-  .then(admin => {
-    adminDb = admin.adminDb;
-    console.log('Firebase Admin initialized successfully for all endpoints.');
-  })
-  .catch(error => {
-    console.error('CRITICAL: Failed to initialize Firebase Admin SDK:', error);
-    throw error;
-  });
+// We will initialize this on the first request to avoid deployment timeouts.
+let adminDb: FirebaseFirestore.Firestore | undefined;
 
 // --- Middleware to ensure DB is initialized before any request ---
-const ensureDbInitialized = (req: express.Request, res: express.Response, next: express.NextFunction): void => {
+const ensureDbInitialized = async (req: express.Request, res: express.Response, next: express.NextFunction): Promise<void> => {
   if (!adminDb) {
-    adminInitPromise
-      .then(() => next())
-      .catch(error => {
-        console.error('Database initialization check failed:', error);
-        res.status(500).json({ error: 'Failed to initialize database connection.' });
-      });
+    try {
+      const admin = await getFirebaseAdmin();
+      adminDb = admin.adminDb;
+      console.log('Firebase Admin initialized successfully on first request.');
+      next();
+    } catch (error) {
+      console.error('CRITICAL: Failed to initialize Firebase Admin SDK:', error);
+      res.status(500).json({ error: 'Failed to initialize database connection.' });
+    }
   } else {
     next();
   }
@@ -48,6 +41,7 @@ app.use(ensureDbInitialized);
 
 // --- Helper functions ---
 async function findBookingConflict(newBooking: Omit<Booking, 'id'>): Promise<Booking | null> {
+  if (!adminDb) throw new Error("Database not initialized");
   const bookingsCollection = adminDb.collection('bookings') as CollectionReference<Booking>;
   const snapshot = await bookingsCollection
     .where('unitId', '==', newBooking.unitId)
@@ -64,6 +58,7 @@ async function findBookingConflict(newBooking: Omit<Booking, 'id'>): Promise<Boo
 }
 
 async function createNotification(notificationData: Omit<AppNotification, 'id'>): Promise<string> {
+  if (!adminDb) throw new Error("Database not initialized");
   const docRef = await adminDb.collection('notifications').add(notificationData);
   return docRef.id;
 }
@@ -81,6 +76,7 @@ app.post('/sendDiscordNotification', async (req, res) => {
 
 app.post('/unit', async (req, res) => {
   try {
+    if (!adminDb) throw new Error("Database not initialized");
     const newUnit: Omit<Unit, 'id'> = req.body;
     const docRef = await adminDb.collection('units').add(newUnit);
     return res.status(201).json({ id: docRef.id });
@@ -92,6 +88,7 @@ app.post('/unit', async (req, res) => {
 
 app.post('/agent', async (req, res) => {
   try {
+    if (!adminDb) throw new Error("Database not initialized");
     const newAgent: Omit<Agent, 'id'> = req.body;
     const docRef = await adminDb.collection('agents').add(newAgent);
     return res.status(201).json({ id: docRef.id });
@@ -103,6 +100,7 @@ app.post('/agent', async (req, res) => {
 
 app.post('/investor', async (req, res) => {
   try {
+    if (!adminDb) throw new Error("Database not initialized");
     const newInvestor: Omit<Investor, 'id'> = req.body;
     const docRef = await adminDb.collection('investors').add(newInvestor);
     return res.status(201).json({ id: docRef.id });
@@ -114,6 +112,7 @@ app.post('/investor', async (req, res) => {
 
 app.post('/booking', async (req, res) => {
   try {
+    if (!adminDb) throw new Error("Database not initialized");
     const newBooking: Omit<Booking, 'id'> = req.body;
 
     const conflict = await findBookingConflict(newBooking);
@@ -150,6 +149,7 @@ app.post('/booking', async (req, res) => {
 
 app.post('/expense', async (req, res) => {
   try {
+    if (!adminDb) throw new Error("Database not initialized");
     const newExpense: Omit<Expense, 'id'> = req.body;
     const docRef = await adminDb.collection('expenses').add(newExpense);
     return res.status(201).json({ id: docRef.id });
