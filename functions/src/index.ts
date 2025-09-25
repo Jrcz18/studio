@@ -25,8 +25,9 @@ const adminInitPromise = getFirebaseAdmin().then(admin => {
     console.log('Firebase Admin initialized successfully for all endpoints.');
 }).catch(error => {
     console.error('CRITICAL: Failed to initialize Firebase Admin SDK:', error);
-    // This will cause the function to fail deployment or execution if the admin SDK is not configured, which is a safe failure mode.
-    process.exit(1); 
+    // Let the error propagate so the function fails cleanly if init fails.
+    // This will cause the function to fail deployment or execution if the admin SDK is not configured.
+    throw error;
 });
 
 // --- Middleware to ensure DB is initialized before any request ---
@@ -193,4 +194,4 @@ app.use((err: Error, req: express.Request, res: express.Response, next: express.
 });
 
 // Export the API
-export const api = onRequest({ region: 'asia-southeast1' }, app);
+export const api = onRequest({ region: 'asia-southeast1', secrets: ["SERVICE_ACCOUNT_KEY", "DISCORD_WEBHOOK_URL"] }, app);
