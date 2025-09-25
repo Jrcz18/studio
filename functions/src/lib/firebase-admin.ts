@@ -9,10 +9,10 @@ let firebaseAdminApp: admin.app.App;
 
 async function initializeFirebaseAdmin() {
   if (!firebaseAdminApp) {
-    const serviceAccountString = process.env.FIREBASE_SERVICE_ACCOUNT_KEY;
+    const serviceAccountString = process.env.SERVICE_ACCOUNT_KEY;
 
     if (!serviceAccountString) {
-      throw new Error('FIREBASE_SERVICE_ACCOUNT_KEY environment variable is not set. The application cannot connect to Firebase services on the backend.');
+      throw new Error('SERVICE_ACCOUNT_KEY environment variable is not set. The application cannot connect to Firebase services on the backend.');
     }
 
     try {
@@ -29,7 +29,7 @@ async function initializeFirebaseAdmin() {
         firebaseAdminApp = admin.app(); // Use the existing app
       }
     } catch (error: any) {
-      console.error("Failed to parse FIREBASE_SERVICE_ACCOUNT_KEY or initialize Firebase Admin SDK:", error);
+      console.error("Failed to parse SERVICE_ACCOUNT_KEY or initialize Firebase Admin SDK:", error);
       throw new Error('Could not initialize Firebase Admin SDK. Please check the service account key format in your environment variables.');
     }
   }
@@ -44,4 +44,3 @@ export async function getFirebaseAdmin() {
     adminAuth: app.auth(),
   };
 }
-
