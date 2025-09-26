@@ -76,7 +76,7 @@ export default function InvestorsPage() {
       ...newInvestorData,
       status: 'active',
     };
-    const id = await addInvestorService(newInvestor);
+    const { id } = await addInvestorService(newInvestor);
     setInvestors((prev) => [...prev, { ...newInvestor, id }]);
   };
 
@@ -100,7 +100,7 @@ export default function InvestorsPage() {
       ...newPaymentData,
       status: 'paid',
     };
-    const id = await addProfitPaymentService(newPayment);
+    const { id } = await addProfitPaymentService(newPayment);
     setProfitPayments((prev) => [...prev, { ...newPayment, id }]);
   };
   

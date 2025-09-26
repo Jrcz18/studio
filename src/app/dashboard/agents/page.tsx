@@ -49,7 +49,7 @@ export default function AgentsPage() {
       totalCommissions: 0,
       status: 'active',
     };
-    const id = await addAgentService(newAgent);
+    const { id } = await addAgentService(newAgent);
     setAgents((prev) => [...prev, { ...newAgent, id }]);
   };
 

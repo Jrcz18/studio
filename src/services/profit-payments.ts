@@ -11,7 +11,7 @@ export async function getProfitPayments(): Promise<ProfitPayment[]> {
     return snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as ProfitPayment));
 }
 
-export async function addProfitPayment(paymentData: Omit<ProfitPayment, 'id'>): Promise<string> {
+export async function addProfitPayment(paymentData: Omit<ProfitPayment, 'id'>): Promise<{ id: string }> {
     const docRef = await addDoc(paymentsCollection, paymentData);
-    return docRef.id;
+    return { id: docRef.id };
 }

@@ -6,7 +6,7 @@ import cors from 'cors';
 import { config } from 'dotenv';
 import { sendDiscordNotificationFlow } from './ai/flows/send-discord-notification';
 import { getFirebaseAdmin } from './lib/firebase-admin';
-import type { CollectionReference } from 'firebase-admin/firestore';
+import type { CollectionReference, DocumentData } from 'firebase-admin/firestore';
 import type { Booking, Unit, AppNotification, Agent, Investor, Expense } from './lib/types';
 
 config();
@@ -58,6 +58,13 @@ app.use(ensureDbInitialized);
 
 
 // --- Helper functions ---
+
+// Generic function to get a collection
+async function getCollection(collectionName: string): Promise<DocumentData[]> {
+    const snapshot = await adminDb!.collection(collectionName).get();
+    return snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+}
+
 async function findBookingConflict(newBooking: Omit<Booking, 'id'>): Promise<Booking | null> {
   const bookingsCollection = adminDb!.collection('bookings') as CollectionReference<Booking>;
   const snapshot = await bookingsCollection
@@ -90,6 +97,17 @@ app.post('/sendDiscordNotification', async (req, res) => {
   }
 });
 
+// --- Units API ---
+app.get('/units', async (req, res) => {
+    try {
+        const units = await getCollection('units');
+        return res.status(200).json(units);
+    } catch (error: any) {
+        console.error('Error fetching units:', error);
+        return res.status(500).json({ error: 'Failed to fetch units' });
+    }
+});
+
 app.post('/unit', async (req, res) => {
   try {
     const newUnit: Omit<Unit, 'id'> = req.body;
@@ -99,6 +117,18 @@ app.post('/unit', async (req, res) => {
     console.error('Error creating unit:', error);
     return res.status(500).json({ error: 'Failed to create unit' });
   }
+});
+
+app.put('/unit/:unitId', async (req, res) => {
+    try {
+        const { unitId } = req.params;
+        const unitData: Partial<Unit> = req.body;
+        await adminDb!.collection('units').doc(unitId).update(unitData);
+        return res.status(200).json({ message: 'Unit updated successfully' });
+    } catch (error: any) {
+        console.error('Error updating unit:', error);
+        return res.status(500).json({ error: 'Failed to update unit' });
+    }
 });
 
 app.delete('/unit/:unitId', async (req, res) => {
@@ -116,6 +146,17 @@ app.delete('/unit/:unitId', async (req, res) => {
 });
 
 
+// --- Agents API ---
+app.get('/agents', async (req, res) => {
+    try {
+        const agents = await getCollection('agents');
+        return res.status(200).json(agents);
+    } catch (error: any) {
+        console.error('Error fetching agents:', error);
+        return res.status(500).json({ error: 'Failed to fetch agents' });
+    }
+});
+
 app.post('/agent', async (req, res) => {
   try {
     const newAgent: Omit<Agent, 'id'> = req.body;
@@ -125,6 +166,18 @@ app.post('/agent', async (req, res) => {
     console.error('Error creating agent:', error);
     return res.status(500).json({ error: 'Failed to create agent' });
   }
+});
+
+app.put('/agent/:agentId', async (req, res) => {
+    try {
+        const { agentId } = req.params;
+        const agentData: Partial<Agent> = req.body;
+        await adminDb!.collection('agents').doc(agentId).update(agentData);
+        return res.status(200).json({ message: 'Agent updated successfully' });
+    } catch (error: any) {
+        console.error('Error updating agent:', error);
+        return res.status(500).json({ error: 'Failed to update agent' });
+    }
 });
 
 app.delete('/agent/:agentId', async (req, res) => {
@@ -141,6 +194,17 @@ app.delete('/agent/:agentId', async (req, res) => {
     }
 });
 
+// --- Investors API ---
+app.get('/investors', async (req, res) => {
+    try {
+        const investors = await getCollection('investors');
+        return res.status(200).json(investors);
+    } catch (error: any) {
+        console.error('Error fetching investors:', error);
+        return res.status(500).json({ error: 'Failed to fetch investors' });
+    }
+});
+
 app.post('/investor', async (req, res) => {
   try {
     const newInvestor: Omit<Investor, 'id'> = req.body;
@@ -150,6 +214,18 @@ app.post('/investor', async (req, res) => {
     console.error('Error creating investor:', error);
     return res.status(500).json({ error: 'Failed to create investor' });
   }
+});
+
+app.put('/investor/:investorId', async (req, res) => {
+    try {
+        const { investorId } = req.params;
+        const investorData: Partial<Investor> = req.body;
+        await adminDb!.collection('investors').doc(investorId).update(investorData);
+        return res.status(200).json({ message: 'Investor updated successfully' });
+    } catch (error: any) {
+        console.error('Error updating investor:', error);
+        return res.status(500).json({ error: 'Failed to update investor' });
+    }
 });
 
 app.delete('/investor/:investorId', async (req, res) => {
@@ -163,6 +239,17 @@ app.delete('/investor/:investorId', async (req, res) => {
     } catch (error: any) {
         console.error('Error deleting investor:', error);
         return res.status(500).json({ error: 'Failed to delete investor' });
+    }
+});
+
+// --- Bookings API ---
+app.get('/bookings', async (req, res) => {
+    try {
+        const bookings = await getCollection('bookings');
+        return res.status(200).json(bookings);
+    } catch (error: any) {
+        console.error('Error fetching bookings:', error);
+        return res.status(500).json({ error: 'Failed to fetch bookings' });
     }
 });
 
@@ -215,6 +302,18 @@ app.post('/booking', async (req, res) => {
   }
 });
 
+app.put('/booking/:bookingId', async (req, res) => {
+    try {
+        const { bookingId } = req.params;
+        const bookingData: Partial<Booking> = req.body;
+        await adminDb!.collection('bookings').doc(bookingId).update(bookingData);
+        return res.status(200).json({ message: 'Booking updated successfully' });
+    } catch (error: any) {
+        console.error('Error updating booking:', error);
+        return res.status(500).json({ error: 'Failed to update booking' });
+    }
+});
+
 app.delete('/booking/:bookingId', async (req, res) => {
     try {
         const { bookingId } = req.params;
@@ -230,6 +329,17 @@ app.delete('/booking/:bookingId', async (req, res) => {
 });
 
 
+// --- Expenses API ---
+app.get('/expenses', async (req, res) => {
+    try {
+        const expenses = await getCollection('expenses');
+        return res.status(200).json(expenses);
+    } catch (error: any) {
+        console.error('Error fetching expenses:', error);
+        return res.status(500).json({ error: 'Failed to fetch expenses' });
+    }
+});
+
 app.post('/expense', async (req, res) => {
   try {
     const newExpense: Omit<Expense, 'id'> = req.body;
@@ -239,6 +349,18 @@ app.post('/expense', async (req, res) => {
     console.error('Error creating expense:', error);
     return res.status(500).json({ error: 'Failed to create expense' });
   }
+});
+
+app.put('/expense/:expenseId', async (req, res) => {
+    try {
+        const { expenseId } = req.params;
+        const expenseData: Partial<Expense> = req.body;
+        await adminDb!.collection('expenses').doc(expenseId).update(expenseData);
+        return res.status(200).json({ message: 'Expense updated successfully' });
+    } catch (error: any) {
+        console.error('Error updating expense:', error);
+        return res.status(500).json({ error: 'Failed to update expense' });
+    }
 });
 
 app.delete('/expense/:expenseId', async (req, res) => {
@@ -254,6 +376,7 @@ app.delete('/expense/:expenseId', async (req, res) => {
         return res.status(500).json({ error: 'Failed to delete expense' });
     }
 });
+
 
 // --- Generic Error Handler ---
 app.use((err: Error, req: express.Request, res: express.Response, next: express.NextFunction) => {

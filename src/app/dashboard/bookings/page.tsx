@@ -70,7 +70,7 @@ export default function BookingsPage() {
     };
     
     try {
-      const id = await addBookingService(newBookingWithDate);
+      const { id } = await addBookingService(newBookingWithDate);
       const fullBooking = { ...newBookingWithDate, id };
       setBookings((prev) => [...prev, fullBooking]);
 

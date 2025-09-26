@@ -20,8 +20,10 @@ export default function ExpensesPage() {
 
   useEffect(() => {
     async function fetchData() {
-        const expensesData = await getExpenses();
-        const unitsData = await getUnits();
+        const [expensesData, unitsData] = await Promise.all([
+            getExpenses(),
+            getUnits(),
+        ]);
         setExpenses(expensesData);
         setUnits(unitsData);
         setLoading(false);
@@ -46,7 +48,7 @@ export default function ExpensesPage() {
   };
 
   const addExpense = async (newExpenseData: Omit<Expense, 'id'>) => {
-    const id = await addExpenseService(newExpenseData);
+    const { id } = await addExpenseService(newExpenseData);
     setExpenses((prev) => [...prev, { ...newExpenseData, id }]);
   };
 

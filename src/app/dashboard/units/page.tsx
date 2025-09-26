@@ -44,7 +44,7 @@ export default function UnitsPage() {
       ...newUnitData,
       status: 'available',
     };
-    const id = await addUnitService(newUnit);
+    const { id } = await addUnitService(newUnit);
     setUnits((prev) => [...prev, { ...newUnit, id, status: 'available' }]);
   };
 
