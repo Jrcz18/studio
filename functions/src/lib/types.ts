@@ -1,14 +1,15 @@
+// --- Units ---
 export type Unit = {
   id?: string;
   name: string;
   type: string;
   rate: number;
   maxOccupancy: number;
-  baseOccupancy: number; 
-  extraGuestFee: number; 
+  baseOccupancy: number;
+  extraGuestFee: number;
   status: 'available' | 'occupied' | 'maintenance';
   description: string;
-  healthScore?: number; 
+  healthScore?: number;
   calendars: {
     airbnb: string;
     bookingcom: string;
@@ -18,9 +19,10 @@ export type Unit = {
   wifiPassword?: string;
 };
 
+// --- Bookings ---
 export type Booking = {
   id?: string;
-  uid?: string; 
+  uid?: string; // optional user ID
   guestFirstName: string;
   guestLastName: string;
   guestPhone: string;
@@ -38,6 +40,7 @@ export type Booking = {
   createdAt: string;
 };
 
+// --- Agents ---
 export type Agent = {
   id?: string;
   name: string;
@@ -51,6 +54,7 @@ export type Agent = {
   status: 'active' | 'inactive';
 };
 
+// --- Investors ---
 export type Investor = {
   id?: string;
   name: string;
@@ -63,9 +67,10 @@ export type Investor = {
   unitIds: string[];
 };
 
+// --- Notifications ---
 export type AppNotification = {
   id?: string;
-  userId: string;
+  userId?: string; // make optional
   type: 'booking' | 'expense' | 'reminder' | 'event' | 'system';
   title: string;
   description: string;
@@ -74,6 +79,7 @@ export type AppNotification = {
   data?: Record<string, any>;
 };
 
+// --- Expenses ---
 export type Expense = {
   id?: string;
   title: string;
@@ -83,4 +89,25 @@ export type Expense = {
   unitId: string | null;
   description: string;
   status: 'paid' | 'unpaid';
+};
+
+// --- Reminders ---
+export type Reminder = {
+  id?: string;
+  title: string;
+  description: string;
+  date: string;
+  userId: string;
+  status: 'pending' | 'completed';
+};
+
+// --- Unit Incidents ---
+export type UnitIncident = {
+  id?: string;
+  unitId: string;
+  title: string;
+  description: string;
+  date: string;
+  reportedBy?: string;
+  status?: 'open' | 'closed';
 };
