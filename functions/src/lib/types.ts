@@ -1,5 +1,3 @@
-
-
 export type Unit = {
   id?: string;
   name: string;
@@ -24,7 +22,7 @@ export type Booking = {
   id?: string;
   uid?: string; 
   guestFirstName: string;
-  guestLastName:string;
+  guestLastName: string;
   guestPhone: string;
   guestEmail: string;
   unitId: string;
@@ -41,48 +39,48 @@ export type Booking = {
 };
 
 export type Agent = {
-    id?: string;
-    name: string;
-    email: string;
-    phone: string;
-    commissionType: 'percentage' | 'fixed_commission';
-    commissionRate: number;
-    totalBookings: number;
-    totalCommissions: number;
-    joinDate: string;
-    status: 'active' | 'inactive';
+  id?: string;
+  name: string;
+  email: string;
+  phone: string;
+  commissionType: 'percentage' | 'fixed_commission';
+  commissionRate: number;
+  totalBookings: number;
+  totalCommissions: number;
+  joinDate: string;
+  status: 'active' | 'inactive';
 };
 
 export type Investor = {
-    id?: string;
-    name: string;
-    email: string;
-    phone: string;
-    investmentAmount: number;
-    sharePercentage: number;
-    joinDate: string;
-    status: 'active' | 'inactive';
-    unitIds: string[];
+  id?: string;
+  name: string;
+  email: string;
+  phone: string;
+  investmentAmount: number;
+  sharePercentage: number;
+  joinDate: string;
+  status: 'active' | 'inactive';
+  unitIds: string[];
 };
 
 export type AppNotification = {
-    id?: string;
-    userId: string;
-    type: 'booking' | 'expense' | 'reminder' | 'event' | 'system';
-    title: string;
-    description: string;
-    createdAt: string;
-    isRead: boolean;
-    data?: Record<string, any>;
+  id?: string;
+  userId: string;
+  type: 'booking' | 'expense' | 'reminder' | 'event' | 'system';
+  title: string;
+  description: string;
+  createdAt: string;
+  isRead: boolean;
+  data?: Record<string, any>;
 };
 
 export type Expense = {
-    id?: string;
-    title: string;
-    category: 'utilities' | 'maintenance' | 'cleaning' | 'supplies' | 'insurance' | 'other';
-    amount: number;
-    date: string;
-    unitId: string | null;
-    description: string;
-    status: 'paid' | 'unpaid';
+  id?: string;
+  title: string;
+  category: 'utilities' | 'maintenance' | 'cleaning' | 'supplies' | 'insurance' | 'other';
+  amount: number;
+  date: string;
+  unitId: string | null;
+  description: string;
+  status: 'paid' | 'unpaid';
 };
