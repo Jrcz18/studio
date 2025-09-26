@@ -2,7 +2,7 @@
 'use client';
 
 import { db } from '@/lib/firebase';
-import { collection, getDocs, doc, updateDoc, deleteDoc, getDoc, addDoc } from 'firebase/firestore';
+import { collection, getDocs, doc, updateDoc, getDoc, addDoc } from 'firebase/firestore';
 import type { Unit } from '@/lib/types';
 
 const unitsCollection = collection(db, 'units');
@@ -52,6 +52,16 @@ export async function updateUnit(unitData: Unit): Promise<void> {
 }
 
 export async function deleteUnit(unitId: string): Promise<void> {
-    const unitDoc = doc(db, 'units', unitId);
-    await deleteDoc(unitDoc);
+    if (!API_BASE_URL) {
+        throw new Error("API_BASE_URL not configured. Cannot delete unit.");
+    }
+
+    const response = await fetch(`${API_BASE_URL}/unit/${unitId}`, {
+        method: 'DELETE',
+    });
+
+    if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error || 'Failed to delete unit via backend');
+    }
 }
