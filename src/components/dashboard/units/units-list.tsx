@@ -51,6 +51,8 @@ function UnitCard({ unit, onEdit, onDelete }: { unit: Unit, onEdit: (unit: Unit)
     maintenance: 'bg-yellow-100 text-yellow-800',
   };
 
+  const status = unit.status || 'available';
+
   return (
     <div className="fb-card">
       <div className="fb-header">
@@ -60,8 +62,8 @@ function UnitCard({ unit, onEdit, onDelete }: { unit: Unit, onEdit: (unit: Unit)
             {unit.type} - Max {unit.maxOccupancy} guests
           </p>
         </div>
-        <span className={`px-3 py-1 rounded-full text-xs font-semibold ${statusVariant[unit.status]}`}>
-          {unit.status.charAt(0).toUpperCase() + unit.status.slice(1)}
+        <span className={`px-3 py-1 rounded-full text-xs font-semibold ${statusVariant[status]}`}>
+          {status.charAt(0).toUpperCase() + status.slice(1)}
         </span>
       </div>
       <div className="fb-content">
@@ -136,4 +138,3 @@ function UnitCard({ unit, onEdit, onDelete }: { unit: Unit, onEdit: (unit: Unit)
     </div>
   );
 }
-
