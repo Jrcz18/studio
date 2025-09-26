@@ -69,7 +69,7 @@ function UnitCard({ unit, onEdit, onDelete }: { unit: Unit, onEdit: (unit: Unit)
       <div className="fb-content">
         <div className="mb-4">
           <p className="text-2xl font-bold text-yellow-600">
-            ₱{unit.rate.toLocaleString()}
+            ₱{(unit.rate || 0).toLocaleString()}
           </p>
           <p className="text-sm text-gray-600">per night</p>
         </div>
