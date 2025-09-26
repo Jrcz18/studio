@@ -1,3 +1,4 @@
+
 'use server';
 
 import { onRequest } from 'firebase-functions/v2/https';
@@ -273,6 +274,7 @@ app.post('/booking', async (req, res) => {
         const unitName = unitDoc.exists ? unitDoc.data()?.name : "Unknown unit";
         await sendDiscordNotificationFlow({
             content: `📅 New booking confirmed!\nUnit: ${unitName}\nGuest: ${newBooking.guestFirstName}\nFrom: ${newBooking.checkinDate} To: ${newBooking.checkoutDate}`,
+            username: "Booking Bot"
         });
     } catch (notificationError) {
         console.error("Failed to send Discord notification for new booking:", notificationError);
@@ -389,3 +391,5 @@ export const api = onRequest(
   { region: 'asia-southeast1', secrets: ['SERVICE_ACCOUNT_KEY', 'DISCORD_WEBHOOK_URL'] },
   app
 );
+
+    
