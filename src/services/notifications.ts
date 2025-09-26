@@ -1,70 +1,59 @@
 
 'use client';
 
-import { db } from '@/lib/firebase';
-import { collection, getDocs, addDoc, doc, updateDoc, query, where, getDoc, deleteDoc } from 'firebase/firestore';
 import type { AppNotification } from '@/lib/types';
 import { auth } from '@/lib/firebase';
 
-const notificationsCollection = collection(db, 'notifications');
+const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL;
 
-// Get a single notification by its ID
-export async function getNotification(notificationId: string): Promise<AppNotification | null> {
-    const docRef = doc(db, 'notifications', notificationId);
-    const docSnap = await getDoc(docRef);
-    if (docSnap.exists()) {
-        return { id: docSnap.id, ...docSnap.data() } as AppNotification;
+async function fetchFromApi(path: string, options: RequestInit = {}) {
+    if (!API_BASE_URL) {
+        throw new Error("API_BASE_URL not configured.");
     }
-    return null;
+    const response = await fetch(`${API_BASE_URL}${path}`, options);
+    if (!response.ok) {
+        const errorData = await response.json().catch(() => ({ error: 'Request failed with status ' + response.status }));
+        throw new Error(errorData.error || 'An unknown API error occurred');
+    }
+    if (response.status === 204 || response.headers.get('Content-Length') === '0') {
+        return null;
+    }
+    return response.json();
 }
 
-// Get all notifications for a user, or all notifications if no user is specified.
-// Sorted by most recent.
-export async function getAllNotifications(userId?: string): Promise<AppNotification[]> {
-    const q = userId ? query(notificationsCollection, where('userId', '==', userId)) : query(notificationsCollection);
-    const snapshot = await getDocs(q);
-    const notifications = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as AppNotification));
-    // Sort manually to avoid needing a composite index
-    return notifications.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
+// Get all notifications for a user
+export async function getAllNotifications(userId: string): Promise<AppNotification[]> {
+    return fetchFromApi(`/notifications/${userId}`);
 }
-
-// Get only unread notifications for a user
-export async function getUnreadNotifications(userId: string): Promise<AppNotification[]> {
-    const allNotifications = await getAllNotifications(userId);
-    return allNotifications.filter(n => !n.isRead);
-}
-
 
 // Add a new notification
-export async function addNotification(notificationData: Omit<AppNotification, 'id'>): Promise<string> {
-    const docRef = await addDoc(notificationsCollection, {
-        ...notificationData,
+export async function addNotification(notificationData: Omit<AppNotification, 'id'>): Promise<{ id: string }> {
+    return fetchFromApi('/notification', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(notificationData),
     });
-    return docRef.id;
 }
 
 // Mark a specific notification as read
 export async function markNotificationAsRead(notificationId: string): Promise<void> {
-    if (!notificationId) throw new Error("Notification ID is required for update");
-    const notificationDoc = doc(db, 'notifications', notificationId);
-    await updateDoc(notificationDoc, { isRead: true });
+    await fetchFromApi(`/notification/${notificationId}/read`, {
+        method: 'PUT',
+    });
 }
 
 // Mark all unread notifications as read for a user
 export async function markAllNotificationsAsRead(userId: string): Promise<void> {
-    const allNotifications = await getAllNotifications(userId);
-    const unreadNotifications = allNotifications.filter(n => !n.isRead);
-
-    const promises = unreadNotifications.map(notification => 
-        updateDoc(doc(db, 'notifications', notification.id!), { isRead: true })
-    );
-    await Promise.all(promises);
+    await fetchFromApi(`/notifications/${userId}/mark-all-read`, {
+        method: 'POST',
+    });
 }
 
 // Delete a specific notification
 export async function deleteNotification(notificationId: string): Promise<void> {
-    if (!notificationId) throw new Error("Notification ID is required to delete.");
-    const notificationDoc = doc(db, 'notifications', notificationId);
-    await deleteDoc(notificationDoc);
+    await fetchFromApi(`/notification/${notificationId}`, {
+        method: 'DELETE',
+    });
 }
 
+    
