@@ -52,7 +52,7 @@ export function AddBookingDialog({
   const [checkoutDate, setCheckoutDate] = useState('');
   const [adults, setAdults] = useState(2);
   const [numChildren, setChildren] = useState(0);
-  const [sendAdminEmail, setSendAdminEmail] = useState(true);
+  const [sendAdminEmail, setSendAdminEmail] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   useEffect(() => {
@@ -92,7 +92,7 @@ export function AddBookingDialog({
       setSelectedUnitId(undefined);
       setAdults(2);
       setChildren(0);
-      setSendAdminEmail(true);
+      setSendAdminEmail(false);
       setIsSubmitting(false);
       const today = new Date().toISOString().split('T')[0];
       setCheckinDate(today);
