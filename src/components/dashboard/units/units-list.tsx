@@ -2,8 +2,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import type { Unit, Platform } from '@/lib/types';
-import { formatDate } from '@/lib/utils';
+import type { Unit } from '@/lib/types';
 import { Link as LinkIcon, Copy, Check } from 'lucide-react';
 
 interface UnitsListProps {
