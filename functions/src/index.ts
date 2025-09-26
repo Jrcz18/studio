@@ -109,6 +109,22 @@ app.get('/units', async (req, res) => {
     }
 });
 
+app.get('/unit/:unitId', async (req, res) => {
+    try {
+        const { unitId } = req.params;
+        const docRef = adminDb!.collection('units').doc(unitId);
+        const docSnap = await docRef.get();
+        if (docSnap.exists()) {
+            return res.status(200).json({ id: docSnap.id, ...docSnap.data() });
+        } else {
+            return res.status(404).json({ error: 'Unit not found' });
+        }
+    } catch (error: any) {
+        console.error('Error fetching unit:', error);
+        return res.status(500).json({ error: 'Failed to fetch unit' });
+    }
+});
+
 app.post('/unit', async (req, res) => {
   try {
     const newUnit: Omit<Unit, 'id'> = req.body;
