@@ -106,17 +106,17 @@ function UnitCard({ unit, onEdit, onDelete }: { unit: Unit, onEdit: (unit: Unit)
             <p className="flex items-center text-sm text-gray-600">
               <LinkIcon className="w-4 h-4 mr-2" /> 
               <span className="font-semibold mr-2">Airbnb:</span>
-              <span className="truncate text-gray-500">{unit.calendars.airbnb || 'Not set'}</span>
+              <span className="truncate text-gray-500">{unit.calendars?.airbnb || 'Not set'}</span>
             </p>
             <p className="flex items-center text-sm text-gray-600">
               <LinkIcon className="w-4 h-4 mr-2" /> 
               <span className="font-semibold mr-2">Booking.com:</span>
-              <span className="truncate text-gray-500">{unit.calendars.bookingcom || 'Not set'}</span>
+              <span className="truncate text-gray-500">{unit.calendars?.bookingcom || 'Not set'}</span>
             </p>
             <p className="flex items-center text-sm text-gray-600">
               <LinkIcon className="w-4 h-4 mr-2" /> 
               <span className="font-semibold mr-2">Direct:</span>
-              <span className="truncate text-gray-500">{unit.calendars.direct || 'Not set'}</span>
+              <span className="truncate text-gray-500">{unit.calendars?.direct || 'Not set'}</span>
             </p>
           </div>
         </div>
