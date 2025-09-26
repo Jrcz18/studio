@@ -44,7 +44,12 @@ export async function updateAgent(agentData: Agent): Promise<void> {
 }
 
 export async function deleteAgent(agentId: string): Promise<void> {
+    const url = `${API_BASE_URL}/agent/${agentId}`;
+    console.log('Deleting agent with ID:', agentId);
+    console.log('Full URL:', url);
+
     await fetchFromApi(`/agent/${agentId}`, {
         method: 'DELETE',
     });
 }
+

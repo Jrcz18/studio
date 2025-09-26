@@ -1,3 +1,4 @@
+
 // --- Units ---
 export type Unit = {
   id?: string;
@@ -110,4 +111,27 @@ export type UnitIncident = {
   date: string;
   reportedBy?: string;
   status?: 'open' | 'closed';
+};
+
+// --- Profit Payments ---
+export type ProfitPayment = {
+    id?: string;
+    investorId: string;
+    month: string;
+    amount: number;
+    paymentDate: string;
+    paymentMethod: 'bank_transfer' | 'gcash' | 'cash' | 'check';
+    notes: string;
+    status: 'paid';
+};
+
+// --- Receipt Settings ---
+export type ReceiptSettings = {
+    id?: string;
+    wifiNetwork: string;
+    wifiPassword?: string;
+    contactEmail: string;
+    contactPhone?: string;
+    checkinTime: string;
+    checkoutTime: string;
 };
