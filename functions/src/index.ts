@@ -17,57 +17,28 @@ app.use(cors({ origin: true }));
 app.use(express.json());
 
 // --- Firebase Admin SDK Initialization ---
-let adminDb: FirebaseFirestore.Firestore | undefined;
-
-// This promise resolves when the admin SDK is ready.
-const adminInitPromise = getFirebaseAdmin()
-  .then(admin => {
-    adminDb = admin.adminDb;
-    console.log('Firebase Admin initialized successfully.');
-    return adminDb;
-  })
-  .catch(error => {
+let adminDb: FirebaseFirestore.Firestore;
+try {
+  ({ adminDb } = getFirebaseAdmin());
+  console.log('Firebase Admin initialized successfully.');
+} catch (error) {
     console.error('CRITICAL: Failed to initialize Firebase Admin SDK:', error);
     // Exit the process if the admin SDK fails to initialize.
     // This prevents the function from running in a broken state.
     process.exit(1);
-  });
-
-// --- Middleware to ensure DB is initialized before any request ---
-const ensureDbInitialized = (req: express.Request, res: express.Response, next: express.NextFunction): void => {
-  if (!adminDb) {
-    adminInitPromise
-      .then(() => {
-        if (adminDb) {
-          next();
-        } else {
-          // This case should theoretically not be reached if process.exit(1) works.
-          res.status(500).json({ error: 'Database not available after initialization attempt.' });
-        }
-      })
-      .catch(error => {
-        console.error('Database initialization check failed during request:', error);
-        res.status(500).json({ error: 'Failed to initialize database connection.' });
-      });
-  } else {
-    next();
-  }
-};
-
-// Apply the middleware to all routes
-app.use(ensureDbInitialized);
+}
 
 
 // --- Helper functions ---
 
 // Generic function to get a collection
 async function getCollection(collectionName: string): Promise<DocumentData[]> {
-    const snapshot = await adminDb!.collection(collectionName).get();
+    const snapshot = await adminDb.collection(collectionName).get();
     return snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
 }
 
 async function findBookingConflict(newBooking: Omit<Booking, 'id'>): Promise<Booking | null> {
-  const bookingsCollection = adminDb!.collection('bookings') as CollectionReference<Booking>;
+  const bookingsCollection = adminDb.collection('bookings') as CollectionReference<Booking>;
   const snapshot = await bookingsCollection
     .where('unitId', '==', newBooking.unitId)
     .where('checkoutDate', '>', newBooking.checkinDate)
@@ -83,7 +54,7 @@ async function findBookingConflict(newBooking: Omit<Booking, 'id'>): Promise<Boo
 }
 
 async function createNotification(notificationData: Omit<AppNotification, 'id'>): Promise<string> {
-  const docRef = await adminDb!.collection('notifications').add(notificationData);
+  const docRef = await adminDb.collection('notifications').add(notificationData);
   return docRef.id;
 }
 
@@ -112,9 +83,9 @@ app.get('/units', async (req, res) => {
 app.get('/unit/:unitId', async (req, res) => {
     try {
         const { unitId } = req.params;
-        const docRef = adminDb!.collection('units').doc(unitId);
+        const docRef = adminDb.collection('units').doc(unitId);
         const docSnap = await docRef.get();
-        if (docSnap.exists()) {
+        if (docSnap.exists) {
             return res.status(200).json({ id: docSnap.id, ...docSnap.data() });
         } else {
             return res.status(404).json({ error: 'Unit not found' });
@@ -128,7 +99,7 @@ app.get('/unit/:unitId', async (req, res) => {
 app.post('/unit', async (req, res) => {
   try {
     const newUnit: Omit<Unit, 'id'> = req.body;
-    const docRef = await adminDb!.collection('units').add(newUnit);
+    const docRef = await adminDb.collection('units').add(newUnit);
     return res.status(201).json({ id: docRef.id });
   } catch (error: any) {
     console.error('Error creating unit:', error);
@@ -140,7 +111,7 @@ app.put('/unit/:unitId', async (req, res) => {
     try {
         const { unitId } = req.params;
         const unitData: Partial<Unit> = req.body;
-        await adminDb!.collection('units').doc(unitId).update(unitData);
+        await adminDb.collection('units').doc(unitId).update(unitData);
         return res.status(200).json({ message: 'Unit updated successfully' });
     } catch (error: any) {
         console.error('Error updating unit:', error);
@@ -154,7 +125,7 @@ app.delete('/unit/:unitId', async (req, res) => {
         if (!unitId) {
             return res.status(400).json({ error: 'Unit ID is required' });
         }
-        await adminDb!.collection('units').doc(unitId).delete();
+        await adminDb.collection('units').doc(unitId).delete();
         return res.status(200).json({ message: 'Unit deleted successfully' });
     } catch (error: any) {
         console.error('Error deleting unit:', error);
@@ -177,7 +148,7 @@ app.get('/agents', async (req, res) => {
 app.post('/agent', async (req, res) => {
   try {
     const newAgent: Omit<Agent, 'id'> = req.body;
-    const docRef = await adminDb!.collection('agents').add(newAgent);
+    const docRef = await adminDb.collection('agents').add(newAgent);
     return res.status(201).json({ id: docRef.id });
   } catch (error: any) {
     console.error('Error creating agent:', error);
@@ -189,7 +160,7 @@ app.put('/agent/:agentId', async (req, res) => {
     try {
         const { agentId } = req.params;
         const agentData: Partial<Agent> = req.body;
-        await adminDb!.collection('agents').doc(agentId).update(agentData);
+        await adminDb.collection('agents').doc(agentId).update(agentData);
         return res.status(200).json({ message: 'Agent updated successfully' });
     } catch (error: any) {
         console.error('Error updating agent:', error);
@@ -203,7 +174,7 @@ app.delete('/agent/:agentId', async (req, res) => {
         if (!agentId) {
             return res.status(400).json({ error: 'Agent ID is required' });
         }
-        await adminDb!.collection('agents').doc(agentId).delete();
+        await adminDb.collection('agents').doc(agentId).delete();
         return res.status(200).json({ message: 'Agent deleted successfully' });
     } catch (error: any) {
         console.error('Error deleting agent:', error);
@@ -225,7 +196,7 @@ app.get('/investors', async (req, res) => {
 app.post('/investor', async (req, res) => {
   try {
     const newInvestor: Omit<Investor, 'id'> = req.body;
-    const docRef = await adminDb!.collection('investors').add(newInvestor);
+    const docRef = await adminDb.collection('investors').add(newInvestor);
     return res.status(201).json({ id: docRef.id });
   } catch (error: any) {
     console.error('Error creating investor:', error);
@@ -237,7 +208,7 @@ app.put('/investor/:investorId', async (req, res) => {
     try {
         const { investorId } = req.params;
         const investorData: Partial<Investor> = req.body;
-        await adminDb!.collection('investors').doc(investorId).update(investorData);
+        await adminDb.collection('investors').doc(investorId).update(investorData);
         return res.status(200).json({ message: 'Investor updated successfully' });
     } catch (error: any) {
         console.error('Error updating investor:', error);
@@ -251,7 +222,7 @@ app.delete('/investor/:investorId', async (req, res) => {
         if (!investorId) {
             return res.status(400).json({ error: 'Investor ID is required' });
         }
-        await adminDb!.collection('investors').doc(investorId).delete();
+        await adminDb.collection('investors').doc(investorId).delete();
         return res.status(200).json({ message: 'Investor deleted successfully' });
     } catch (error: any) {
         console.error('Error deleting investor:', error);
@@ -282,11 +253,11 @@ app.post('/booking', async (req, res) => {
       });
     }
 
-    const docRef = await adminDb!.collection('bookings').add(newBooking);
+    const docRef = await adminDb.collection('bookings').add(newBooking);
 
     // Optional: Send a discord notification on new booking
     try {
-        const unitDoc = await adminDb!.collection("units").doc(newBooking.unitId).get();
+        const unitDoc = await adminDb.collection("units").doc(newBooking.unitId).get();
         const unitName = unitDoc.exists ? unitDoc.data()?.name : "Unknown unit";
         await sendDiscordNotificationFlow({
             content: `📅 New booking confirmed!\nUnit: ${unitName}\nGuest: ${newBooking.guestFirstName}\nFrom: ${newBooking.checkinDate} To: ${newBooking.checkoutDate}`,
@@ -299,7 +270,7 @@ app.post('/booking', async (req, res) => {
 
 
     if (newBooking.uid) {
-      const unitDoc = await adminDb!.collection('units').doc(newBooking.unitId).get();
+      const unitDoc = await adminDb.collection('units').doc(newBooking.unitId).get();
       const unitName = unitDoc.data()?.name || 'the unit';
 
       await createNotification({
@@ -324,11 +295,11 @@ app.put('/booking/:bookingId', async (req, res) => {
     try {
         const { bookingId } = req.params;
         const bookingData: Partial<Booking> = req.body;
-        await adminDb!.collection('bookings').doc(bookingId).update(bookingData);
+        await adminDb.collection('bookings').doc(bookingId).update(bookingData);
         return res.status(200).json({ message: 'Booking updated successfully' });
     } catch (error: any) {
         console.error('Error updating booking:', error);
-        return res.status(500).json({ error: 'Failed to update booking' });
+        return res.status(500).json({ error: 'Failed to create booking' });
     }
 });
 
@@ -338,7 +309,7 @@ app.delete('/booking/:bookingId', async (req, res) => {
         if (!bookingId) {
             return res.status(400).json({ error: 'Booking ID is required' });
         }
-        await adminDb!.collection('bookings').doc(bookingId).delete();
+        await adminDb.collection('bookings').doc(bookingId).delete();
         return res.status(200).json({ message: 'Booking deleted successfully' });
     } catch (error: any) {
         console.error('Error deleting booking:', error);
@@ -361,7 +332,7 @@ app.get('/expenses', async (req, res) => {
 app.post('/expense', async (req, res) => {
   try {
     const newExpense: Omit<Expense, 'id'> = req.body;
-    const docRef = await adminDb!.collection('expenses').add(newExpense);
+    const docRef = await adminDb.collection('expenses').add(newExpense);
     return res.status(201).json({ id: docRef.id });
   } catch (error: any) {
     console.error('Error creating expense:', error);
@@ -373,11 +344,11 @@ app.put('/expense/:expenseId', async (req, res) => {
     try {
         const { expenseId } = req.params;
         const expenseData: Partial<Expense> = req.body;
-        await adminDb!.collection('expenses').doc(expenseId).update(expenseData);
+        await adminDb.collection('expenses').doc(expenseId).update(expenseData);
         return res.status(200).json({ message: 'Expense updated successfully' });
     } catch (error: any) {
         console.error('Error updating expense:', error);
-        return res.status(500).json({ error: 'Failed to update expense' });
+        return res.status(500).json({ error: 'Failed to create expense' });
     }
 });
 
@@ -387,7 +358,7 @@ app.delete('/expense/:expenseId', async (req, res) => {
         if (!expenseId) {
             return res.status(400).json({ error: 'Expense ID is required' });
         }
-        await adminDb!.collection('expenses').doc(expenseId).delete();
+        await adminDb.collection('expenses').doc(expenseId).delete();
         return res.status(200).json({ message: 'Expense deleted successfully' });
     } catch (error: any) {
         console.error('Error deleting expense:', error);
@@ -407,8 +378,3 @@ export const api = onRequest(
   { region: 'asia-southeast1', secrets: ['SERVICE_ACCOUNT_KEY', 'DISCORD_WEBHOOK_URL'] },
   app
 );
-
-    
-    
-
-    
