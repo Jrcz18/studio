@@ -37,7 +37,7 @@ export default function RemindersPage() {
       createdAt: new Date().toISOString(),
       status: 'pending',
     };
-    const id = await addReminderService(newReminder);
+    const { id } = await addReminderService(newReminder);
     setReminders((prev) => [...prev, { ...newReminder, id }]);
   };
 

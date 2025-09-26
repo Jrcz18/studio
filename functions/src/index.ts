@@ -512,5 +512,3 @@ export const api = onRequest(
   { region: 'asia-southeast1', secrets: ['SERVICE_ACCOUNT_KEY', 'DISCORD_WEBHOOK_URL'] },
   app
 );
-
-    

@@ -1,29 +1,50 @@
+
 'use client';
 
-import { db } from '@/lib/firebase';
-import { collection, getDocs, addDoc, doc, updateDoc, deleteDoc } from 'firebase/firestore';
 import type { Reminder } from '@/lib/types';
 
-const remindersCollection = collection(db, 'reminders');
+const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL;
 
-export async function getReminders(): Promise<Reminder[]> {
-    const snapshot = await getDocs(remindersCollection);
-    return snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Reminder));
+async function fetchFromApi(path: string, options: RequestInit = {}) {
+    if (!API_BASE_URL) {
+        throw new Error("API_BASE_URL not configured.");
+    }
+    const response = await fetch(`${API_BASE_URL}${path}`, options);
+    if (!response.ok) {
+        const errorData = await response.json().catch(() => ({ error: 'Request failed with status ' + response.status }));
+        throw new Error(errorData.error || 'An unknown API error occurred');
+    }
+    if (response.status === 204) {
+        return null;
+    }
+    return response.json();
 }
 
-export async function addReminder(reminderData: Omit<Reminder, 'id'>): Promise<string> {
-    const docRef = await addDoc(remindersCollection, reminderData);
-    return docRef.id;
+
+export async function getReminders(): Promise<Reminder[]> {
+    return fetchFromApi('/reminders');
+}
+
+export async function addReminder(reminderData: Omit<Reminder, 'id'>): Promise<{id: string}> {
+    return fetchFromApi('/reminder', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(reminderData),
+    });
 }
 
 export async function updateReminder(reminderData: Reminder): Promise<void> {
     const { id, ...data } = reminderData;
     if (!id) throw new Error("Reminder ID is required for update");
-    const reminderDoc = doc(db, 'reminders', id);
-    await updateDoc(reminderDoc, data);
+    await fetchFromApi(`/reminder/${id}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(data),
+    });
 }
 
 export async function deleteReminder(reminderId: string): Promise<void> {
-    const reminderDoc = doc(db, 'reminders', reminderId);
-    await deleteDoc(reminderDoc);
+    await fetchFromApi(`/reminder/${reminderId}`, {
+        method: 'DELETE',
+    });
 }
