@@ -1,3 +1,4 @@
+
 'use server';
 
 import { onRequest } from 'firebase-functions/v2/https';
@@ -15,6 +16,8 @@ import type {
   Expense,
   Reminder,
   UnitIncident,
+  ProfitPayment,
+  ReceiptSettings,
 } from './lib/types';
 
 // Load .env locally (not in production)
@@ -255,7 +258,7 @@ app.post('/booking', async (req, res) => {
     }
 
     return res.status(201).json({ id: docRef.id });
-  } catch (err: any) {
+  } catch (err: any)_DELETE
     console.error(err);
     return res.status(500).json({ error: 'Failed to create booking' });
   }
@@ -350,6 +353,29 @@ app.post('/reminder', async (req, res) => {
   } catch (err: any) {
     console.error(err);
     return res.status(500).json({ error: 'Failed to create reminder' });
+  }
+});
+
+app.put('/reminder/:reminderId', async (req, res) => {
+  try {
+    const adminDb = getDb();
+    const reminderData: Partial<Reminder> = req.body;
+    await adminDb.collection('reminders').doc(req.params.reminderId).update(reminderData);
+    return res.status(200).json({ message: 'Reminder updated successfully' });
+  } catch (err: any) {
+    console.error(err);
+    return res.status(500).json({ error: 'Failed to update reminder' });
+  }
+});
+
+app.delete('/reminder/:reminderId', async (req, res) => {
+  try {
+    const adminDb = getDb();
+    await adminDb.collection('reminders').doc(req.params.reminderId).delete();
+    return res.status(200).json({ message: 'Reminder deleted successfully' });
+  } catch (err: any) {
+    console.error(err);
+    return res.status(500).json({ error: 'Failed to delete reminder' });
   }
 });
 
@@ -494,6 +520,65 @@ app.delete('/incident/:incidentId', async (req, res) => {
   }
 });
 
+
+// --- Profit Payments API ---
+app.get('/profit-payments', async (req, res) => {
+    try {
+        const payments = await getCollection<ProfitPayment>('profit-payments');
+        return res.status(200).json(payments);
+    } catch (err: any) {
+        console.error(err);
+        return res.status(500).json({ error: 'Failed to fetch profit payments' });
+    }
+});
+
+app.post('/profit-payment', async (req, res) => {
+    try {
+        const adminDb = getDb();
+        const newPayment: Omit<ProfitPayment, 'id'> = req.body;
+        const docRef = await adminDb.collection('profit-payments').add(newPayment);
+        return res.status(201).json({ id: docRef.id });
+    } catch (err: any) {
+        console.error(err);
+        return res.status(500).json({ error: 'Failed to create profit payment' });
+    }
+});
+
+
+// --- Receipt Settings API ---
+app.get('/receipt-settings', async (req, res) => {
+    try {
+        const adminDb = getDb();
+        const docSnap = await adminDb.collection('config').doc('receiptSettings').get();
+        if (!docSnap.exists) {
+            // Return default settings if not found
+            return res.status(200).json({
+                wifiNetwork: 'Manila Prime WiFi',
+                contactEmail: 'primestaycation24@gmail.com',
+                checkinTime: '15:00',
+                checkoutTime: '11:00'
+            });
+        }
+        return res.status(200).json(docSnap.data());
+    } catch (err: any) {
+        console.error(err);
+        return res.status(500).json({ error: 'Failed to fetch receipt settings' });
+    }
+});
+
+app.post('/receipt-settings', async (req, res) => {
+    try {
+        const adminDb = getDb();
+        const settings: Partial<ReceiptSettings> = req.body;
+        await adminDb.collection('config').doc('receiptSettings').set(settings, { merge: true });
+        return res.status(200).json({ message: 'Receipt settings updated successfully' });
+    } catch (err: any) {
+        console.error(err);
+        return res.status(500).json({ error: 'Failed to update receipt settings' });
+    }
+});
+
+
 // --- Discord Notification Endpoint ---
 app.post('/sendDiscordNotification', async (req, res) => {
   try {
@@ -503,47 +588,6 @@ app.post('/sendDiscordNotification', async (req, res) => {
   } catch (err: any) {
     console.error(err);
     return res.status(500).json({ error: 'Failed to send Discord notification' });
-  }
-});
-
-// --- External Booking API ---
-app.post('/external-booking', async (req, res) => {
-  try {
-    const adminDb = getDb();
-    const newBooking: Omit<Booking, 'id'> & { source: string } = req.body; // source e.g. 'Airbnb'
-
-    const conflict = await findBookingConflict(newBooking);
-    if (conflict)
-      return res.status(409).json({ error: 'Booking conflict detected.', existingBooking: conflict });
-
-    const docRef = await adminDb.collection('bookings').add(newBooking);
-
-    // Discord notification for external booking
-    try {
-      const unitDoc = await adminDb.collection('units').doc(newBooking.unitId).get();
-      const unitName = unitDoc.exists ? unitDoc.data()?.name : 'Unknown unit';
-      await sendDiscordNotificationFlow({
-        content: `📅 New booking from external source!\nSource: ${newBooking.source}\nUnit: ${unitName}\nGuest: ${newBooking.guestFirstName}\nFrom: ${newBooking.checkinDate} To: ${newBooking.checkoutDate}`,
-        username: 'Booking Bot',
-      });
-    } catch (e) {
-      console.error('Discord notification failed for external booking', e);
-    }
-
-    // Optional app notification just mentions source
-    await adminDb.collection('notifications').add({
-      type: 'booking',
-      title: `Booking from ${newBooking.source}`,
-      description: `Booking for unit ${newBooking.unitId} from ${newBooking.checkinDate} to ${newBooking.checkoutDate}`,
-      createdAt: new Date().toISOString(),
-      isRead: false,
-      data: { bookingId: docRef.id, unitId: newBooking.unitId, source: newBooking.source },
-    } as Omit<AppNotification, 'id'>);
-
-    return res.status(201).json({ id: docRef.id });
-  } catch (err: any) {
-    console.error(err);
-    return res.status(500).json({ error: 'Failed to create external booking' });
   }
 });
 
