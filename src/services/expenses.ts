@@ -2,7 +2,7 @@
 'use client';
 
 import { db } from '@/lib/firebase';
-import { collection, getDocs, doc, updateDoc, deleteDoc } from 'firebase/firestore';
+import { collection, getDocs, doc, updateDoc } from 'firebase/firestore';
 import type { Expense } from '@/lib/types';
 
 const expensesCollectionRef = collection(db, 'expenses');
@@ -42,6 +42,16 @@ export async function updateExpense(expenseData: Expense): Promise<void> {
 }
 
 export async function deleteExpense(expenseId: string): Promise<void> {
-    const expenseDoc = doc(db, 'expenses', expenseId);
-    await deleteDoc(expenseDoc);
+    if (!API_BASE_URL) {
+        throw new Error("API_BASE_URL not configured. Cannot delete expense.");
+    }
+
+    const response = await fetch(`${API_BASE_URL}/expense/${expenseId}`, {
+        method: 'DELETE',
+    });
+
+    if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error || 'Failed to delete expense via backend');
+    }
 }

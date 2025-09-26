@@ -2,7 +2,7 @@
 'use client';
 
 import { db } from '@/lib/firebase';
-import { collection, getDocs, doc, updateDoc, deleteDoc } from 'firebase/firestore';
+import { collection, getDocs, doc, updateDoc } from 'firebase/firestore';
 import type { Investor } from '@/lib/types';
 
 const investorsCollection = collection(db, 'investors');
@@ -39,6 +39,16 @@ export async function updateInvestor(investorData: Investor): Promise<void> {
 }
 
 export async function deleteInvestor(investorId: string): Promise<void> {
-    const investorDoc = doc(db, 'investors', investorId);
-    await deleteDoc(investorDoc);
+    if (!API_BASE_URL) {
+        throw new Error("API_BASE_URL not configured. Cannot delete investor.");
+    }
+
+    const response = await fetch(`${API_BASE_URL}/investor/${investorId}`, {
+        method: 'DELETE',
+    });
+
+    if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error || 'Failed to delete investor via backend');
+    }
 }

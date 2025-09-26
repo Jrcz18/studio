@@ -2,7 +2,7 @@
 'use client';
 
 import { db } from '@/lib/firebase';
-import { collection, getDocs, deleteDoc, doc, updateDoc } from 'firebase/firestore';
+import { collection, getDocs, doc, updateDoc } from 'firebase/firestore';
 import type { Booking } from '@/lib/types';
 import { auth } from '@/lib/firebase';
 
@@ -54,6 +54,16 @@ export async function updateBooking(bookingData: Booking): Promise<void> {
 }
 
 export async function deleteBooking(bookingId: string): Promise<void> {
-    const bookingDoc = doc(db, 'bookings', bookingId);
-    await deleteDoc(bookingDoc);
+    if (!API_BASE_URL) {
+        throw new Error("API_BASE_URL not configured. Cannot delete booking.");
+    }
+
+    const response = await fetch(`${API_BASE_URL}/booking/${bookingId}`, {
+        method: 'DELETE',
+    });
+
+    if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error || 'Failed to delete booking via backend');
+    }
 }

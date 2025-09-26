@@ -127,6 +127,20 @@ app.post('/agent', async (req, res) => {
   }
 });
 
+app.delete('/agent/:agentId', async (req, res) => {
+    try {
+        const { agentId } = req.params;
+        if (!agentId) {
+            return res.status(400).json({ error: 'Agent ID is required' });
+        }
+        await adminDb!.collection('agents').doc(agentId).delete();
+        return res.status(200).json({ message: 'Agent deleted successfully' });
+    } catch (error: any) {
+        console.error('Error deleting agent:', error);
+        return res.status(500).json({ error: 'Failed to delete agent' });
+    }
+});
+
 app.post('/investor', async (req, res) => {
   try {
     const newInvestor: Omit<Investor, 'id'> = req.body;
@@ -136,6 +150,20 @@ app.post('/investor', async (req, res) => {
     console.error('Error creating investor:', error);
     return res.status(500).json({ error: 'Failed to create investor' });
   }
+});
+
+app.delete('/investor/:investorId', async (req, res) => {
+    try {
+        const { investorId } = req.params;
+        if (!investorId) {
+            return res.status(400).json({ error: 'Investor ID is required' });
+        }
+        await adminDb!.collection('investors').doc(investorId).delete();
+        return res.status(200).json({ message: 'Investor deleted successfully' });
+    } catch (error: any) {
+        console.error('Error deleting investor:', error);
+        return res.status(500).json({ error: 'Failed to delete investor' });
+    }
 });
 
 app.post('/booking', async (req, res) => {
@@ -187,6 +215,21 @@ app.post('/booking', async (req, res) => {
   }
 });
 
+app.delete('/booking/:bookingId', async (req, res) => {
+    try {
+        const { bookingId } = req.params;
+        if (!bookingId) {
+            return res.status(400).json({ error: 'Booking ID is required' });
+        }
+        await adminDb!.collection('bookings').doc(bookingId).delete();
+        return res.status(200).json({ message: 'Booking deleted successfully' });
+    } catch (error: any) {
+        console.error('Error deleting booking:', error);
+        return res.status(500).json({ error: 'Failed to delete booking' });
+    }
+});
+
+
 app.post('/expense', async (req, res) => {
   try {
     const newExpense: Omit<Expense, 'id'> = req.body;
@@ -196,6 +239,20 @@ app.post('/expense', async (req, res) => {
     console.error('Error creating expense:', error);
     return res.status(500).json({ error: 'Failed to create expense' });
   }
+});
+
+app.delete('/expense/:expenseId', async (req, res) => {
+    try {
+        const { expenseId } = req.params;
+        if (!expenseId) {
+            return res.status(400).json({ error: 'Expense ID is required' });
+        }
+        await adminDb!.collection('expenses').doc(expenseId).delete();
+        return res.status(200).json({ message: 'Expense deleted successfully' });
+    } catch (error: any) {
+        console.error('Error deleting expense:', error);
+        return res.status(500).json({ error: 'Failed to delete expense' });
+    }
 });
 
 // --- Generic Error Handler ---

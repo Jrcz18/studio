@@ -2,7 +2,7 @@
 'use client';
 
 import { db } from '@/lib/firebase';
-import { collection, getDocs, doc, updateDoc, deleteDoc } from 'firebase/firestore';
+import { collection, getDocs, doc, updateDoc } from 'firebase/firestore';
 import type { Agent } from '@/lib/types';
 
 const agentsCollection = collection(db, 'agents');
@@ -42,6 +42,16 @@ export async function updateAgent(agentData: Agent): Promise<void> {
 }
 
 export async function deleteAgent(agentId: string): Promise<void> {
-    const agentDoc = doc(db, 'agents', agentId);
-    await deleteDoc(agentDoc);
+    if (!API_BASE_URL) {
+        throw new Error("API_BASE_URL not configured. Cannot delete agent.");
+    }
+
+    const response = await fetch(`${API_BASE_URL}/agent/${agentId}`, {
+        method: 'DELETE',
+    });
+
+    if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error || 'Failed to delete agent via backend');
+    }
 }
