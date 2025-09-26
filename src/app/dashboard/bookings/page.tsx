@@ -14,6 +14,7 @@ import { getUnits } from '@/services/units';
 import { useUIContext } from '@/hooks/use-ui-context';
 import { getAgents } from '@/services/agents';
 import { sendAdminBookingNotification } from '@/ai/flows/send-admin-notification';
+import { sendDiscordNotification } from '@/ai/flows/send-discord-notification';
 import { useToast } from '@/hooks/use-toast';
 
 
@@ -73,9 +74,9 @@ export default function BookingsPage() {
       const fullBooking = { ...newBookingWithDate, id };
       setBookings((prev) => [...prev, fullBooking]);
 
-      if (options.sendAdminEmail) {
-        await sendNotificationEmail(fullBooking);
-      }
+      // Trigger notifications
+      await handleNotifications(fullBooking, options);
+
       return true; // Indicate success
     } catch (error: any) {
       if (error.message.includes('409')) {
@@ -117,31 +118,42 @@ export default function BookingsPage() {
     });
   }
   
-  const sendNotificationEmail = async (booking: Booking) => {
-      try {
+  const handleNotifications = async (booking: Booking, options: { sendAdminEmail: boolean }) => {
+    try {
         const unit = units.find(u => u.id === booking.unitId);
-        if (unit) {
-          await sendAdminBookingNotification({
-            guestName: `${booking.guestFirstName} ${booking.guestLastName}`,
-            guestContact: booking.guestPhone,
-            numberOfGuests: booking.adults + booking.children,
-            checkinDate: booking.checkinDate,
-            checkoutDate: booking.checkoutDate,
-            unitName: unit.name,
-          });
-          toast({
-            title: 'Admin Notified',
-            description: 'An email has been sent to the building admin.',
-          });
+        if (!unit) return;
+
+        // Send Discord notification
+        const discordMessage = `🎉 New Booking!\n**Guest:** ${booking.guestFirstName} ${booking.guestLastName}\n**Unit:** ${unit.name}\n**Dates:** ${booking.checkinDate} to ${booking.checkoutDate}\n**Total:** ₱${booking.totalAmount.toLocaleString()}`;
+        await sendDiscordNotification({ content: discordMessage, username: "Booking Bot" });
+        toast({
+            title: 'Booking Created & Notified',
+            description: 'A notification has been sent to your Discord channel.',
+        });
+        
+        // Optionally send admin email
+        if (options.sendAdminEmail) {
+            await sendAdminBookingNotification({
+                guestName: `${booking.guestFirstName} ${booking.guestLastName}`,
+                guestContact: booking.guestPhone,
+                numberOfGuests: booking.adults + booking.children,
+                checkinDate: booking.checkinDate,
+                checkoutDate: booking.checkoutDate,
+                unitName: unit.name,
+            });
+            toast({
+                title: 'Admin Notified',
+                description: 'An email has been sent to the building admin.',
+            });
         }
-      } catch (error) {
-        console.error('Failed to send admin notification:', error);
-         toast({
+    } catch (error) {
+        console.error('Failed to send notifications:', error);
+        toast({
             title: 'Notification Failed',
-            description: 'Could not send email to the building admin.',
+            description: 'The booking was created, but notifications could not be sent.',
             variant: 'destructive',
-         });
-      }
+        });
+    }
   }
 
   const updateBooking = async (updatedBooking: Booking) => {
