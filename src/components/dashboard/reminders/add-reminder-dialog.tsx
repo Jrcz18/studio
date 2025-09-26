@@ -32,7 +32,7 @@ export function AddReminderDialog({
   children?: React.ReactNode;
   open: boolean;
   onOpenChange: (open: boolean) => void;
-  onAddReminder: (newReminder: Omit<Reminder, 'id' | 'createdAt' | 'status'>) => void;
+  onAddReminder: (newReminder: Omit<Reminder, 'id' | 'createdAt' | 'status' | 'userId'>) => void;
 }) {
     const [title, setTitle] = useState('');
     const [description, setDescription] = useState('');

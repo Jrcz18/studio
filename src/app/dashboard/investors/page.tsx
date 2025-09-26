@@ -141,12 +141,14 @@ export default function InvestorsPage() {
         onDelete={deleteInvestor}
         onPayProfit={handleOpenPayProfitDialog}
       />
-      <PayProfitDialog
-        open={isPayProfitOpen}
-        onOpenChange={setIsPayProfitOpen}
-        investor={selectedInvestor}
-        onRecordPayment={recordProfitPayment}
-      />
+      {selectedInvestor && (
+        <PayProfitDialog
+            open={isPayProfitOpen}
+            onOpenChange={setIsPayProfitOpen}
+            investor={selectedInvestor}
+            onRecordPayment={recordProfitPayment}
+        />
+      )}
     </div>
   );
 }

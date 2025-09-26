@@ -2,6 +2,7 @@
 'use client';
 
 import type { Reminder } from '@/lib/types';
+import { auth } from '@/lib/firebase';
 
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL;
 
@@ -22,14 +23,24 @@ async function fetchFromApi(path: string, options: RequestInit = {}) {
 
 
 export async function getReminders(): Promise<Reminder[]> {
-    return fetchFromApi('/reminders');
+    const user = auth.currentUser;
+    if (!user) throw new Error("User not authenticated");
+    return fetchFromApi(`/reminders/${user.uid}`);
 }
 
 export async function addReminder(reminderData: Omit<Reminder, 'id'>): Promise<{id: string}> {
+    const user = auth.currentUser;
+    if (!user) throw new Error("User not authenticated");
+    
+    const payload = {
+        ...reminderData,
+        userId: user.uid,
+    };
+
     return fetchFromApi('/reminder', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(reminderData),
+        body: JSON.stringify(payload),
     });
 }
 

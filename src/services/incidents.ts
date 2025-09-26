@@ -20,12 +20,14 @@ async function fetchFromApi(path: string, options: RequestInit = {}) {
     return response.json();
 }
 
+export async function getIncidentsForUnit(unitId: string, daysAgo?: number): Promise<UnitIncident[]> {
+    let path = `/incidents/${unitId}`;
+    if (daysAgo) {
+        path += `?daysAgo=${daysAgo}`;
+    }
+    return fetchFromApi(path);
+}
 
-/**
- * Adds a new incident to the Firestore database via the backend API.
- * @param incidentData The data for the new incident.
- * @returns The ID of the newly created incident document.
- */
 export async function addIncident(incidentData: Omit<UnitIncident, 'id'>): Promise<{ id: string }> {
     return fetchFromApi('/incident', {
         method: 'POST',
@@ -34,10 +36,6 @@ export async function addIncident(incidentData: Omit<UnitIncident, 'id'>): Promi
     });
 }
 
-/**
- * Updates an existing incident in the Firestore database via the backend API.
- * @param incidentData The incident data to update, including its ID.
- */
 export async function updateIncident(incidentData: UnitIncident): Promise<void> {
     const { id, ...data } = incidentData;
     if (!id) throw new Error("Incident ID is required for update");
@@ -48,18 +46,8 @@ export async function updateIncident(incidentData: UnitIncident): Promise<void> 
     });
 }
 
-/**
- * Fetches all incidents for a specific unit via the backend API.
- * @param unitId The ID of the unit to fetch incidents for.
- * @param daysAgo (Optional) The number of days into the past to fetch incidents from.
- * @returns A promise that resolves to an array of incidents.
- */
-export async function getIncidentsForUnit(unitId: string, daysAgo?: number): Promise<UnitIncident[]> {
-    let path = `/incidents/${unitId}`;
-    if (daysAgo) {
-        path += `?daysAgo=${daysAgo}`;
-    }
-    return fetchFromApi(path);
+export async function deleteIncident(incidentId: string): Promise<void> {
+    await fetchFromApi(`/incident/${incidentId}`, {
+        method: 'DELETE',
+    });
 }
-
-    

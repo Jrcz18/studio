@@ -8,6 +8,7 @@ import { AddReminderDialog } from '@/components/dashboard/reminders/add-reminder
 import type { Reminder } from '@/lib/types';
 import { getReminders, addReminder as addReminderService, updateReminder as updateReminderService, deleteReminder as deleteReminderService } from '@/services/reminders';
 import { useUIContext } from '@/hooks/use-ui-context';
+import { useAuth } from '@/hooks/use-auth';
 
 
 export default function RemindersPage() {
@@ -15,15 +16,17 @@ export default function RemindersPage() {
   const [reminders, setReminders] = React.useState<Reminder[]>([]);
   const [loading, setLoading] = useState(true);
   const searchParams = useSearchParams();
+  const { user } = useAuth();
 
   useEffect(() => {
     async function fetchReminders() {
+      if (!user) return;
       const remindersData = await getReminders();
       setReminders(remindersData);
       setLoading(false);
     }
     fetchReminders();
-  }, []);
+  }, [user]);
 
   useEffect(() => {
     if (searchParams.get('action') === 'add') {
@@ -31,9 +34,11 @@ export default function RemindersPage() {
     }
   }, [searchParams, setIsAddReminderOpen]);
 
-  const addReminder = async (newReminderData: Omit<Reminder, 'id' | 'createdAt' | 'status'>) => {
+  const addReminder = async (newReminderData: Omit<Reminder, 'id' | 'createdAt' | 'status' | 'userId'>) => {
+    if (!user) return;
     const newReminder: Omit<Reminder, 'id'> = {
       ...newReminderData,
+      userId: user.uid,
       createdAt: new Date().toISOString(),
       status: 'pending',
     };
