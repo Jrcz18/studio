@@ -29,10 +29,8 @@ const app = express();
 app.use(cors({ origin: true }));
 app.use(express.json());
 
-// Lazy Firebase DB getter to support runtime secrets
-function getDb() {
-  return getFirebaseAdmin().adminDb;
-}
+// Handle CORS preflight requests for DELETE operations
+app.options('*', cors());
 
 // --- Helper functions ---
 async function getCollection<T>(collectionName: string): Promise<T[]> {
