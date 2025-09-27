@@ -1,0 +1,96 @@
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    --background: 240 5% 96%;
+    --foreground: 240 10% 4%;
+    --card: 240 4% 98%;
+    --card-foreground: 240 10% 4%;
+    --popover: 240 4% 98%;
+    --popover-foreground: 240 10% 4%;
+    --primary: 51 100% 50%; /* prime-yellow */
+    --primary-foreground: 240 10% 4%;
+    --secondary: 45 100% 50%; /* prime-gold */
+    --secondary-foreground: 240 10% 4%;
+    --muted: 240 5% 96%;
+    --muted-foreground: 240 4% 46%;
+    --accent: 45 100% 50%; /* prime-gold */
+    --accent-foreground: 240 10% 4%;
+    --destructive: 0 84% 60%;
+    --destructive-foreground: 0 0% 98%;
+    --border: 240 6% 90%;
+    --input: 240 6% 90%;
+    --ring: 51 100% 50%;
+    --radius: 0.5rem;
+  }
+
+  .dark {
+    --background: 240 10% 4%;
+    --foreground: 0 0% 98%;
+    --card: 240 10% 4%;
+    --card-foreground: 0 0% 98%;
+    --popover: 240 10% 4%;
+    --popover-foreground: 0 0% 98%;
+    --primary: 51 100% 50%;
+    --primary-foreground: 240 10% 4%;
+    --secondary: 45 100% 50%;
+    --secondary-foreground: 240 10% 4%;
+    --muted: 240 4% 16%;
+    --muted-foreground: 240 5% 65%;
+    --accent: 45 100% 50%;
+    --accent-foreground: 240 10% 4%;
+    --destructive: 0 63% 31%;
+    --destructive-foreground: 0 0% 98%;
+    --border: 240 4% 16%;
+    --input: 240 4% 16%;
+    --ring: 51 100% 50%;
+  }
+}
+
+@layer base {
+  * {
+    @apply border-border;
+  }
+  body {
+    @apply bg-background text-foreground;
+  }
+}
+
+@layer components {
+    .prime-button {
+      background: #FFD700;
+      color: #000000;
+      border: none;
+      border-radius: 8px;
+      font-weight: 600;
+      transition: all 0.2s ease;
+    }
+    .prime-button:hover {
+        background: #FFFF00;
+        color: #000000;
+    }
+
+    .fb-card {
+        background: #ffffff;
+        border-radius: 12px;
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+        border: 1px solid #e5e7eb;
+        margin-bottom: 16px;
+        transition: all 0.2s ease;
+    }
+
+    .fb-header {
+        padding: 12px 16px;
+        border-bottom: 1px solid #e5e7eb;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+    }
+
+    .fb-content {
+        padding: 16px;
+    }
+}
