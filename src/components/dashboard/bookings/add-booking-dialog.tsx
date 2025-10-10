@@ -23,7 +23,6 @@ import {
 } from '@/components/ui/select';
 import { Textarea } from '@/components/ui/textarea';
 import { Checkbox } from '@/components/ui/checkbox';
-import { sendAdminBookingNotification } from '@/ai/flows/send-admin-notification';
 
 export function AddBookingDialog({
   children,
@@ -241,19 +240,15 @@ export function AddBookingDialog({
               <Input name="children" type="number" id="children" min="0" value={numChildren} onChange={e => setChildren(parseInt(e.target.value))} />
             </div>
           </div>
-          <div className="grid grid-cols-2 gap-4">
+          <div className="grid grid-cols-1 gap-4">
             <div>
-                <Label htmlFor="nightlyRate">Nightly Rate</Label>
-                <Input id="nightlyRate" value={`₱${nightlyRate.toLocaleString()}`} readOnly className="bg-muted" />
-                 {unit && (adults + numChildren > unit.baseOccupancy) &&
+              <Label htmlFor="totalAmount">Total Amount</Label>
+              <Input id="totalAmount" value={`₱${totalAmount.toLocaleString()}`} readOnly className="bg-muted"/>
+               {unit && (adults + numChildren > unit.baseOccupancy) &&
                     <p className="text-xs text-muted-foreground mt-1">
                         Base rate ₱{unit.rate} + ₱{unit.extraGuestFee * (adults + numChildren - unit.baseOccupancy)} extra guest fee
                     </p>
                 }
-            </div>
-            <div>
-              <Label htmlFor="totalAmount">Total Amount</Label>
-              <Input id="totalAmount" value={`₱${totalAmount.toLocaleString()}`} readOnly className="bg-muted"/>
             </div>
           </div>
           <div>

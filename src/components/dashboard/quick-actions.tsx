@@ -84,7 +84,7 @@ export function QuickActions({
     }
   };
 
-  const colorClasses = {
+  const colorClasses: { [key: string]: string } = {
     'AI Assistant': 'bg-blue-50 hover:bg-blue-100 text-blue-800',
     'Add Booking': 'bg-green-50 hover:bg-green-100 text-green-800',
     'Add Unit': 'bg-purple-50 hover:bg-purple-100 text-purple-800',
@@ -106,10 +106,10 @@ export function QuickActions({
               key={item.label}
               onClick={() => handleNavigate(item.href, item.action)}
               className={`flex flex-col items-center justify-center p-4 rounded-lg transition-colors aspect-square ${
-                colorClasses[item.label as keyof typeof colorClasses]
+                colorClasses[item.label] ?? 'bg-gray-50 hover:bg-gray-100 text-gray-800'
               }`}
             >
-              <item.icon className="text-3xl mb-2" />
+              <item.icon className="w-8 h-8 mb-2" />
               <span className="font-semibold text-center text-xs">{item.label}</span>
             </button>
           ))}
