@@ -1,7 +1,7 @@
 
 'use client';
 
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useMemo } from 'react';
 import { useSearchParams } from 'next/navigation';
 import { Button } from '@/components/ui/button';
 import { BookingsList } from '@/components/dashboard/bookings/bookings-list';
@@ -16,7 +16,12 @@ import { getAgents } from '@/services/agents';
 import { sendAdminBookingNotification } from '@/ai/flows/send-admin-notification';
 import { sendDiscordNotification } from '@/ai/flows/send-discord-notification';
 import { useToast } from '@/hooks/use-toast';
-
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
+import { Calendar as CalendarIcon } from 'lucide-react';
+import { Calendar } from '@/components/ui/calendar';
+import { format } from 'date-fns';
+import { cn } from '@/lib/utils';
 
 export default function BookingsPage() {
   const {
@@ -36,6 +41,11 @@ export default function BookingsPage() {
   const [conflictData, setConflictData] = useState<{ newBooking: Omit<Booking, 'id'>, existingBooking: Booking } | null>(null);
   const searchParams = useSearchParams();
   const { toast } = useToast();
+
+  // State for filters
+  const [unitFilter, setUnitFilter] = useState('all');
+  const [agentFilter, setAgentFilter] = useState('all');
+  const [dateFilter, setDateFilter] = useState<Date | undefined>(undefined);
 
   useEffect(() => {
     async function fetchData() {
@@ -57,6 +67,21 @@ export default function BookingsPage() {
       setIsAddBookingOpen(true);
     }
   }, [searchParams, setIsAddBookingOpen]);
+
+  const filteredBookings = useMemo(() => {
+    return bookings.filter(booking => {
+      const unitMatch = unitFilter === 'all' || booking.unitId === unitFilter;
+      const agentMatch = agentFilter === 'all' || booking.agentId === agentFilter;
+      const dateMatch = !dateFilter || (new Date(booking.checkinDate) <= dateFilter && new Date(booking.checkoutDate) > dateFilter);
+      return unitMatch && agentMatch && dateMatch;
+    }).sort((a, b) => new Date(b.checkinDate).getTime() - new Date(a.checkinDate).getTime());
+  }, [bookings, unitFilter, agentFilter, dateFilter]);
+
+  const clearFilters = () => {
+    setUnitFilter('all');
+    setAgentFilter('all');
+    setDateFilter(undefined);
+  };
 
   const handleOpenEditDialog = (booking: Booking) => {
     setSelectedBooking(booking);
@@ -104,9 +129,6 @@ export default function BookingsPage() {
   };
 
   const forceAddBooking = async (bookingData: Omit<Booking, 'id'>) => {
-    // This function assumes you have a way to tell the backend to ignore conflicts
-    // For now, we'll just add it to the local state as a demonstration.
-    // In a real app, you'd call a service like `forceAddBookingService`.
     const id = `force_${Date.now()}`; // Create a temporary ID
     const fullBooking = { ...bookingData, id };
     setBookings((prev) => [...prev, fullBooking]);
@@ -123,7 +145,6 @@ export default function BookingsPage() {
         const unit = units.find(u => u.id === booking.unitId);
         if (!unit) return;
 
-        // Send Discord notification
         const discordMessage = `🎉 New Booking!\n**Guest:** ${booking.guestFirstName} ${booking.guestLastName}\n**Unit:** ${unit.name}\n**Dates:** ${booking.checkinDate} to ${booking.checkoutDate}\n**Total:** ₱${booking.totalAmount.toLocaleString()}`;
         await sendDiscordNotification({ content: discordMessage, username: "Booking Bot" });
         toast({
@@ -131,7 +152,6 @@ export default function BookingsPage() {
             description: 'A notification has been sent to your Discord channel.',
         });
         
-        // Optionally send admin email
         if (options.sendAdminEmail) {
             await sendAdminBookingNotification({
                 guestName: `${booking.guestFirstName} ${booking.guestLastName}`,
@@ -159,7 +179,7 @@ export default function BookingsPage() {
   const updateBooking = async (updatedBooking: Booking) => {
     await updateBookingService(updatedBooking);
     setBookings((prev) => 
-        prev.map((b) => b.id === updatedBooking.id ? updatedBooking : b)
+        prev.map((b) => (b.id === updatedBooking.id ? updatedBooking : b))
     );
     setSelectedBooking(null);
   };
@@ -198,8 +218,60 @@ export default function BookingsPage() {
           </button>
         </AddBookingDialog>
       </div>
+
+      <div className="prime-card p-4 mb-6">
+        <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+          <Select value={unitFilter} onValueChange={setUnitFilter}>
+            <SelectTrigger><SelectValue placeholder="Filter by Unit" /></SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">All Units</SelectItem>
+              {units.map(unit => (
+                <SelectItem key={unit.id} value={unit.id!}>{unit.name}</SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+
+          <Select value={agentFilter} onValueChange={setAgentFilter}>
+            <SelectTrigger><SelectValue placeholder="Filter by Agent" /></SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">All Agents</SelectItem>
+              {agents.map(agent => (
+                <SelectItem key={agent.id} value={agent.id!}>{agent.name}</SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+          
+          <Popover>
+            <PopoverTrigger asChild>
+              <Button
+                variant={"outline"}
+                className={cn(
+                  "w-full justify-start text-left font-normal",
+                  !dateFilter && "text-muted-foreground"
+                )}
+              >
+                <CalendarIcon className="mr-2 h-4 w-4" />
+                {dateFilter ? format(dateFilter, "PPP") : <span>Filter by date</span>}
+              </Button>
+            </PopoverTrigger>
+            <PopoverContent className="w-auto p-0">
+              <Calendar
+                mode="single"
+                selected={dateFilter}
+                onSelect={setDateFilter}
+                initialFocus
+              />
+            </PopoverContent>
+          </Popover>
+
+          <Button variant="outline" onClick={clearFilters} disabled={unitFilter === 'all' && agentFilter === 'all' && !dateFilter}>
+            Clear Filters
+          </Button>
+        </div>
+      </div>
+
       <BookingsList 
-        bookings={bookings} 
+        bookings={filteredBookings} 
         units={units} 
         onEdit={handleOpenEditDialog}
         onDelete={deleteBooking} 
