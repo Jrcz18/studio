@@ -72,7 +72,17 @@ export default function BookingsPage() {
     return bookings.filter(booking => {
       const unitMatch = unitFilter === 'all' || booking.unitId === unitFilter;
       const agentMatch = agentFilter === 'all' || booking.agentId === agentFilter;
-      const dateMatch = !dateFilter || (new Date(booking.checkinDate) <= dateFilter && new Date(booking.checkoutDate) > dateFilter);
+      
+      let dateMatch = true;
+      if (dateFilter) {
+        const checkinDate = new Date(booking.checkinDate);
+        // Reset time part to compare dates only
+        checkinDate.setHours(0, 0, 0, 0);
+        const filterDate = new Date(dateFilter);
+        filterDate.setHours(0, 0, 0, 0);
+        dateMatch = checkinDate.getTime() === filterDate.getTime();
+      }
+
       return unitMatch && agentMatch && dateMatch;
     }).sort((a, b) => new Date(b.checkinDate).getTime() - new Date(a.checkinDate).getTime());
   }, [bookings, unitFilter, agentFilter, dateFilter]);
@@ -251,7 +261,7 @@ export default function BookingsPage() {
                 )}
               >
                 <CalendarIcon className="mr-2 h-4 w-4" />
-                {dateFilter ? format(dateFilter, "PPP") : <span>Filter by date</span>}
+                {dateFilter ? format(dateFilter, "PPP") : <span>Filter by check-in date</span>}
               </Button>
             </PopoverTrigger>
             <PopoverContent className="w-auto p-0">
