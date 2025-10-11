@@ -83,7 +83,7 @@ export function BookingsList({ bookings, units, onEdit, onDelete }: BookingsList
                     <strong>Guests:</strong> {booking.adults + booking.children}
                   </p>
                   <p>
-                    <strong>Total:</strong> ₱{booking.totalAmount.toLocaleString()}
+                    <strong>Total:</strong> ₱{(booking.totalAmount || 0).toLocaleString()}
                   </p>
                 </div>
               </div>
