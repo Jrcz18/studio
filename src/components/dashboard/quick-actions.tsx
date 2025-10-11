@@ -30,7 +30,7 @@ const actionComponents = [
   {
     label: 'Add Booking',
     icon: CalendarDays,
-    action: 'add-booking',
+    action: 'add',
     href: '/dashboard/bookings',
   },
   {
@@ -73,17 +73,13 @@ export function QuickActions({
   onOpenChange: (open: boolean) => void;
 }) {
   const router = useRouter();
-  const { setIsAiChatOpen, setIsAddBookingOpen } = useUIContext();
+  const { setIsAiChatOpen } = useUIContext();
 
   const handleNavigate = (href: string, action: string) => {
-    onOpenChange(false); // Close the Quick Actions dialog first
+    onOpenChange(false);
 
     if (action === 'ai-chat') {
       setIsAiChatOpen(true);
-    } else if (action === 'add-booking') {
-      router.push(href);
-      // Directly set the state to open the dialog after navigating
-      setTimeout(() => setIsAddBookingOpen(true), 50); 
     } else {
       router.push(`${href}?action=${action}`);
     }
