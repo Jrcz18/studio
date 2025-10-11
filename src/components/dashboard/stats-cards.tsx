@@ -19,9 +19,9 @@ const StatsCards = ({ bookings, expenses, units }: StatsCardsProps) => {
             return checkin <= today && checkout >= today;
         }).length;
 
-        const monthlyRevenue = bookings.reduce((total, booking) => total + booking.totalAmount, 0);
+        const monthlyRevenue = bookings.reduce((total, booking) => total + (booking.totalAmount || 0), 0);
         const totalUnits = units.length;
-        const totalExpenses = expenses.reduce((total, expense) => total + expense.amount, 0);
+        const totalExpenses = expenses.reduce((total, expense) => total + (expense.amount || 0), 0);
         const netProfit = monthlyRevenue - totalExpenses;
 
         return [
