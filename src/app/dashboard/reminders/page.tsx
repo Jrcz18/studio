@@ -34,12 +34,11 @@ export default function RemindersPage() {
     }
   }, [searchParams, setIsAddReminderOpen]);
 
-  const addReminder = async (newReminderData: Omit<Reminder, 'id' | 'createdAt' | 'status' | 'userId'>) => {
+  const addReminder = async (newReminderData: Omit<Reminder, 'id' | 'status' | 'userId'>) => {
     if (!user) return;
     const newReminder: Omit<Reminder, 'id'> = {
       ...newReminderData,
       userId: user.uid,
-      createdAt: new Date().toISOString(),
       status: 'pending',
     };
     const { id } = await addReminderService(newReminder);
