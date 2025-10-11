@@ -1,4 +1,3 @@
-
 'use client';
 
 import type { Booking, Unit } from '@/lib/types';
@@ -46,8 +45,8 @@ export function BookingsList({ bookings, units, onEdit, onDelete }: BookingsList
               <div className="flex items-center">
                 <div className="fb-avatar">
                   <span>
-                    {booking.guestFirstName.charAt(0)}
-                    {booking.guestLastName.charAt(0)}
+                    {(booking.guestFirstName || '?').charAt(0)}
+                    {(booking.guestLastName || '').charAt(0)}
                   </span>
                 </div>
                 <div className="flex-1">
