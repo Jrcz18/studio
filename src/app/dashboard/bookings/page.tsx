@@ -98,7 +98,7 @@ export default function BookingsPage() {
     setIsEditBookingOpen(true);
   };
 
-  const addBooking = async (newBookingData: Omit<Booking, 'id' | 'createdAt' | 'totalAmount' | 'nightlyRate'>, options: { sendAdminEmail: boolean }) => {
+  const addBooking = async (newBookingData: Omit<Booking, 'id' | 'createdAt' | 'nightlyRate'>, options: { sendAdminEmail: boolean }) => {
     try {
       const { id, totalAmount, nightlyRate } = await addBookingService(newBookingData);
       const fullBooking: Booking = { 

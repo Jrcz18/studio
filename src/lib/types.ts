@@ -40,6 +40,7 @@ export type Booking = {
   specialRequests: string;
   createdAt: string;
   calendarEventId?: string;
+  isCustomAmount?: boolean;
 };
 
 export type Reminder = {

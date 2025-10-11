@@ -36,13 +36,15 @@ export function AddBookingDialog({
   open: boolean;
   onOpenChange: (open: boolean) => void;
   onAddBooking: (
-    booking: Omit<Booking, 'id' | 'createdAt' | 'totalAmount' | 'nightlyRate'>,
+    booking: Omit<Booking, 'id' | 'createdAt' | 'nightlyRate'>,
     options: { sendAdminEmail: boolean }
   ) => Promise<boolean>;
   units: Unit[];
   agents: Agent[];
 }) {
-  const [totalAmount, setTotalAmount] = useState(0);
+  const [calculatedTotal, setCalculatedTotal] = useState(0);
+  const [customTotal, setCustomTotal] = useState<number | undefined>(undefined);
+  const [useCustomTotal, setUseCustomTotal] = useState(false);
   const [selectedUnitId, setSelectedUnitId] = useState<string | undefined>(
     undefined
   );
@@ -69,20 +71,22 @@ export function AddBookingDialog({
 
         if (nights > 0) {
           const nightlyRate = unit.rate + extraGuestCharge;
-          setTotalAmount(nightlyRate * nights);
+          setCalculatedTotal(nightlyRate * nights);
         } else {
-          setTotalAmount(0);
+          setCalculatedTotal(0);
         }
       }
     } else {
-      setTotalAmount(0);
+      setCalculatedTotal(0);
     }
   }, [selectedUnitId, checkinDate, checkoutDate, adults, numChildren, units]);
 
   useEffect(() => {
     if (open) {
       // Reset form state when dialog opens
-      setTotalAmount(0);
+      setCalculatedTotal(0);
+      setCustomTotal(undefined);
+      setUseCustomTotal(false);
       setSelectedUnitId(undefined);
       setAdults(2);
       setChildren(0);
@@ -110,6 +114,9 @@ export function AddBookingDialog({
     setIsSubmitting(true);
     const formData = new FormData(e.currentTarget);
     const agentId = formData.get('agentId') as string;
+    
+    const finalTotalAmount = useCustomTotal ? customTotal || 0 : calculatedTotal;
+
     const newBooking = {
       guestFirstName: formData.get('guestFirstName') as string,
       guestLastName: formData.get('guestLastName') as string,
@@ -121,6 +128,8 @@ export function AddBookingDialog({
       checkoutDate: formData.get('checkoutDate') as string,
       adults: adults,
       children: numChildren,
+      totalAmount: finalTotalAmount,
+      isCustomAmount: useCustomTotal,
       paymentStatus: formData.get('paymentStatus') as
         | 'pending'
         | 'partial'
@@ -233,17 +242,37 @@ export function AddBookingDialog({
               <Input name="children" type="number" id="children" min="0" value={numChildren} onChange={e => setChildren(parseInt(e.target.value))} />
             </div>
           </div>
-          <div className="grid grid-cols-1 gap-4">
-            <div>
-              <Label htmlFor="totalAmount">Total Amount</Label>
-              <Input id="totalAmount" value={`₱${totalAmount.toLocaleString()}`} readOnly className="bg-muted"/>
-               {unit && (adults + numChildren > unit.baseOccupancy) &&
-                    <p className="text-xs text-muted-foreground mt-1">
-                        Base rate ₱{unit.rate} + ₱{unit.extraGuestFee * (adults + numChildren - unit.baseOccupancy)} extra guest fee
-                    </p>
-                }
+
+          {/* TOTAL AMOUNT SECTION */}
+          <div className="space-y-2">
+            <Label>Total Amount</Label>
+            {useCustomTotal ? (
+              <Input 
+                id="customTotal" 
+                type="number"
+                placeholder="Enter custom total amount"
+                value={customTotal === undefined ? '' : customTotal}
+                onChange={(e) => setCustomTotal(e.target.value === '' ? undefined : parseFloat(e.target.value))}
+              />
+            ) : (
+              <Input id="calculatedTotal" value={`₱${calculatedTotal.toLocaleString()}`} readOnly className="bg-muted"/>
+            )}
+             {unit && (adults + numChildren > unit.baseOccupancy) && !useCustomTotal &&
+                  <p className="text-xs text-muted-foreground mt-1">
+                      Base rate ₱{unit.rate} + ₱{unit.extraGuestFee * (adults + numChildren - unit.baseOccupancy)} extra guest fee
+                  </p>
+              }
+            <div className="flex items-center space-x-2 pt-1">
+              <Checkbox
+                id="useCustomTotal"
+                checked={useCustomTotal}
+                onCheckedChange={(checked) => setUseCustomTotal(!!checked)}
+              />
+              <label htmlFor="useCustomTotal" className="text-sm font-medium">Set Custom Total Amount</label>
             </div>
           </div>
+
+
           <div>
             <Label htmlFor="paymentStatus">Payment Status</Label>
             <Select name="paymentStatus" defaultValue="pending">
