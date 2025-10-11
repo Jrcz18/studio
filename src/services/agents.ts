@@ -14,7 +14,7 @@ async function fetchFromApi(path: string, options: RequestInit = {}) {
         const errorData = await response.json().catch(() => ({ error: 'Request failed with status ' + response.status }));
         throw new Error(errorData.error || 'An unknown API error occurred');
     }
-    if (response.status === 204) {
+    if (response.status === 204 || response.headers.get('Content-Length') === '0') {
         return null;
     }
     return response.json();
@@ -52,4 +52,3 @@ export async function deleteAgent(agentId: string): Promise<void> {
         method: 'DELETE',
     });
 }
-
