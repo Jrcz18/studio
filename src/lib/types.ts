@@ -3,13 +3,14 @@ export type Unit = {
   id?: string;
   name: string;
   type: string;
+  capacity?: number;
   rate: number;
   maxOccupancy: number;
-  baseOccupancy: number; // New field for base occupancy
-  extraGuestFee: number; // New field for extra guest fee
+  baseOccupancy: number;
+  extraGuestFee: number;
   status: 'available' | 'occupied' | 'maintenance';
   description: string;
-  healthScore?: number; // New field for health score
+  healthScore?: number;
   calendars: {
     airbnb: string;
     bookingcom: string;
@@ -21,7 +22,8 @@ export type Unit = {
 
 export type Booking = {
   id?: string;
-  uid?: string; // Unique identifier from iCal source
+  bookingId?: string;
+  uid?: string;
   guestFirstName: string;
   guestLastName:string;
   guestPhone: string;
@@ -37,6 +39,7 @@ export type Booking = {
   paymentStatus: 'pending' | 'partial' | 'paid';
   specialRequests: string;
   createdAt: string;
+  calendarEventId?: string;
 };
 
 export type Reminder = {
@@ -49,6 +52,7 @@ export type Reminder = {
   dueTime?: string;
   status: 'pending' | 'completed';
   createdAt: string;
+  userId: string;
 };
 
 export type Investor = {

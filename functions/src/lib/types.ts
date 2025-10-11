@@ -1,9 +1,9 @@
-
 // --- Units ---
 export type Unit = {
   id?: string;
   name: string;
   type: string;
+  capacity?: number; // add this
   rate: number;
   maxOccupancy: number;
   baseOccupancy: number;
@@ -23,7 +23,8 @@ export type Unit = {
 // --- Bookings ---
 export type Booking = {
   id?: string;
-  uid?: string; // optional user ID
+  bookingId?: string; // ✅ added back for redundancy
+  uid?: string;
   guestFirstName: string;
   guestLastName: string;
   guestPhone: string;
@@ -39,6 +40,7 @@ export type Booking = {
   paymentStatus: 'pending' | 'partial' | 'paid';
   specialRequests: string;
   createdAt: string;
+  calendarEventId?: string;
 };
 
 // --- Agents ---
@@ -112,6 +114,7 @@ export type UnitIncident = {
   reportedBy?: string;
   status?: 'open' | 'closed';
 };
+
 
 // --- Profit Payments ---
 export type ProfitPayment = {
