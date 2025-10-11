@@ -98,15 +98,16 @@ export default function BookingsPage() {
     setIsEditBookingOpen(true);
   };
 
-  const addBooking = async (newBookingData: Omit<Booking, 'id' | 'createdAt'>, options: { sendAdminEmail: boolean }) => {
-    const newBookingWithDate: Omit<Booking, 'id'> = {
-      ...newBookingData,
-      createdAt: new Date().toISOString(),
-    };
-    
+  const addBooking = async (newBookingData: Omit<Booking, 'id' | 'createdAt' | 'totalAmount' | 'nightlyRate'>, options: { sendAdminEmail: boolean }) => {
     try {
-      const { id } = await addBookingService(newBookingWithDate);
-      const fullBooking = { ...newBookingWithDate, id };
+      const { id, totalAmount, nightlyRate } = await addBookingService(newBookingData);
+      const fullBooking: Booking = { 
+        ...newBookingData, 
+        id, 
+        totalAmount,
+        nightlyRate,
+        createdAt: new Date().toISOString()
+      };
       setBookings((prev) => [...prev, fullBooking]);
 
       // Trigger notifications
@@ -114,6 +115,10 @@ export default function BookingsPage() {
 
       return true; // Indicate success
     } catch (error: any) {
+        const newBookingWithDate = {
+            ...newBookingData,
+            createdAt: new Date().toISOString(),
+        };
       if (error.message.includes('409')) {
         try {
           const conflict = JSON.parse(error.message.substring(error.message.indexOf('{')));

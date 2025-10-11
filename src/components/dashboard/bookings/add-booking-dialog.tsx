@@ -36,13 +36,12 @@ export function AddBookingDialog({
   open: boolean;
   onOpenChange: (open: boolean) => void;
   onAddBooking: (
-    booking: Omit<Booking, 'id' | 'createdAt'>,
+    booking: Omit<Booking, 'id' | 'createdAt' | 'totalAmount' | 'nightlyRate'>,
     options: { sendAdminEmail: boolean }
   ) => Promise<boolean>;
   units: Unit[];
   agents: Agent[];
 }) {
-  const [nightlyRate, setNightlyRate] = useState(0);
   const [totalAmount, setTotalAmount] = useState(0);
   const [selectedUnitId, setSelectedUnitId] = useState<string | undefined>(
     undefined
@@ -69,16 +68,13 @@ export function AddBookingDialog({
         const extraGuestCharge = extraGuests * (unit.extraGuestFee || 0);
 
         if (nights > 0) {
-          const totalNightlyRate = unit.rate + extraGuestCharge;
-          setNightlyRate(totalNightlyRate);
-          setTotalAmount(totalNightlyRate * nights);
+          const nightlyRate = unit.rate + extraGuestCharge;
+          setTotalAmount(nightlyRate * nights);
         } else {
-          setNightlyRate(0);
           setTotalAmount(0);
         }
       }
     } else {
-      setNightlyRate(0);
       setTotalAmount(0);
     }
   }, [selectedUnitId, checkinDate, checkoutDate, adults, numChildren, units]);
@@ -86,7 +82,6 @@ export function AddBookingDialog({
   useEffect(() => {
     if (open) {
       // Reset form state when dialog opens
-      setNightlyRate(0);
       setTotalAmount(0);
       setSelectedUnitId(undefined);
       setAdults(2);
@@ -126,8 +121,6 @@ export function AddBookingDialog({
       checkoutDate: formData.get('checkoutDate') as string,
       adults: adults,
       children: numChildren,
-      nightlyRate: nightlyRate,
-      totalAmount: totalAmount,
       paymentStatus: formData.get('paymentStatus') as
         | 'pending'
         | 'partial'

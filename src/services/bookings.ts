@@ -32,7 +32,7 @@ export async function getBookings(): Promise<Booking[]> {
     return fetchFromApi('/bookings');
 }
 
-export async function addBooking(bookingData: Omit<Booking, 'id'>): Promise<{ id: string }> {
+export async function addBooking(bookingData: Omit<Booking, 'id' | 'createdAt' | 'totalAmount' | 'nightlyRate'>): Promise<{ id: string, totalAmount: number, nightlyRate: number }> {
     const user = auth.currentUser;
     const payload = {
         ...bookingData,

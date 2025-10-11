@@ -34,13 +34,13 @@ app.options('*', cors());
 
 // --- Helper functions ---
 async function getCollection<T>(collectionName: string): Promise<T[]> {
-  const adminDb = getDb();
+  const { adminDb } = getFirebaseAdmin();
   const snapshot = await adminDb.collection(collectionName).get();
   return snapshot.docs.map((doc) => ({ id: doc.id, ...(doc.data() as T) }));
 }
 
-async function findBookingConflict(newBooking: Omit<Booking, 'id'>): Promise<Booking | null> {
-  const adminDb = getDb();
+async function findBookingConflict(newBooking: Booking): Promise<Booking | null> {
+  const { adminDb } = getFirebaseAdmin();
   const snapshot = await adminDb
     .collection('bookings')
     .where('unitId', '==', newBooking.unitId)
@@ -52,7 +52,7 @@ async function findBookingConflict(newBooking: Omit<Booking, 'id'>): Promise<Boo
   return (
     snapshot.docs
       .map((doc) => ({ id: doc.id, ...(doc.data() as Booking) }))
-      .find((booking) => booking.checkinDate < newBooking.checkoutDate) || null
+      .find((booking) => booking.id !== newBooking.id && booking.checkinDate < newBooking.checkoutDate) || null
   );
 }
 
@@ -69,7 +69,7 @@ app.get('/units', async (req, res) => {
 
 app.get('/unit/:unitId', async (req, res) => {
   try {
-    const adminDb = getDb();
+    const { adminDb } = getFirebaseAdmin();
     const docSnap = await adminDb.collection('units').doc(req.params.unitId).get();
     if (!docSnap.exists) return res.status(404).json({ error: 'Unit not found' });
     return res.status(200).json({ id: docSnap.id, ...(docSnap.data() as Unit) });
@@ -81,7 +81,7 @@ app.get('/unit/:unitId', async (req, res) => {
 
 app.post('/unit', async (req, res) => {
   try {
-    const adminDb = getDb();
+    const { adminDb } = getFirebaseAdmin();
     const newUnit: Omit<Unit, 'id'> = req.body;
     const docRef = await adminDb.collection('units').add(newUnit);
     return res.status(201).json({ id: docRef.id });
@@ -93,7 +93,7 @@ app.post('/unit', async (req, res) => {
 
 app.put('/unit/:unitId', async (req, res) => {
   try {
-    const adminDb = getDb();
+    const { adminDb } = getFirebaseAdmin();
     const unitData: Partial<Unit> = req.body;
     await adminDb.collection('units').doc(req.params.unitId).update(unitData);
     return res.status(200).json({ message: 'Unit updated successfully' });
@@ -105,7 +105,7 @@ app.put('/unit/:unitId', async (req, res) => {
 
 app.delete('/unit/:unitId', async (req, res) => {
   try {
-    const adminDb = getDb();
+    const { adminDb } = getFirebaseAdmin();
     await adminDb.collection('units').doc(req.params.unitId).delete();
     return res.status(200).json({ message: 'Unit deleted successfully' });
   } catch (err: any) {
@@ -127,7 +127,7 @@ app.get('/agents', async (req, res) => {
 
 app.post('/agent', async (req, res) => {
   try {
-    const adminDb = getDb();
+    const { adminDb } = getFirebaseAdmin();
     const newAgent: Omit<Agent, 'id'> = req.body;
     const docRef = await adminDb.collection('agents').add(newAgent);
     return res.status(201).json({ id: docRef.id });
@@ -139,7 +139,7 @@ app.post('/agent', async (req, res) => {
 
 app.put('/agent/:agentId', async (req, res) => {
   try {
-    const adminDb = getDb();
+    const { adminDb } = getFirebaseAdmin();
     const agentData: Partial<Agent> = req.body;
     await adminDb.collection('agents').doc(req.params.agentId).update(agentData);
     return res.status(200).json({ message: 'Agent updated successfully' });
@@ -151,7 +151,7 @@ app.put('/agent/:agentId', async (req, res) => {
 
 app.delete('/agent/:agentId', async (req, res) => {
   try {
-    const adminDb = getDb();
+    const { adminDb } = getFirebaseAdmin();
     await adminDb.collection('agents').doc(req.params.agentId).delete();
     return res.status(200).json({ message: 'Agent deleted successfully' });
   } catch (err: any) {
@@ -173,7 +173,7 @@ app.get('/investors', async (req, res) => {
 
 app.post('/investor', async (req, res) => {
   try {
-    const adminDb = getDb();
+    const { adminDb } = getFirebaseAdmin();
     const newInvestor: Omit<Investor, 'id'> = req.body;
     const docRef = await adminDb.collection('investors').add(newInvestor);
     return res.status(201).json({ id: docRef.id });
@@ -185,7 +185,7 @@ app.post('/investor', async (req, res) => {
 
 app.put('/investor/:investorId', async (req, res) => {
   try {
-    const adminDb = getDb();
+    const { adminDb } = getFirebaseAdmin();
     const investorData: Partial<Investor> = req.body;
     await adminDb.collection('investors').doc(req.params.investorId).update(investorData);
     return res.status(200).json({ message: 'Investor updated successfully' });
@@ -197,7 +197,7 @@ app.put('/investor/:investorId', async (req, res) => {
 
 app.delete('/investor/:investorId', async (req, res) => {
   try {
-    const adminDb = getDb();
+    const { adminDb } = getFirebaseAdmin();
     await adminDb.collection('investors').doc(req.params.investorId).delete();
     return res.status(200).json({ message: 'Investor deleted successfully' });
   } catch (err: any) {
@@ -219,22 +219,84 @@ app.get('/bookings', async (req, res) => {
 
 app.post('/booking', async (req, res) => {
   try {
-    const adminDb = getDb();
-    const newBooking: Omit<Booking, 'id'> = req.body;
+    const { adminDb } = getFirebaseAdmin();
+    const newBooking: Omit<Booking, 'id' | 'totalAmount' | 'createdAt' | 'nightlyRate'> = req.body;
 
-    const conflict = await findBookingConflict(newBooking);
+    // Fetch unit data
+    const unitRef = adminDb.collection('units').doc(newBooking.unitId);
+    const unitSnap = await unitRef.get();
+
+    if (!unitSnap.exists) {
+      return res.status(400).json({ error: 'Invalid unit ID — unit not found.' });
+    }
+
+    const unitData = unitSnap.data() as Unit;
+
+    // Validate rate
+    if (unitData.rate === undefined || unitData.rate === null) {
+      return res.status(400).json({ error: 'Unit rate not set for this unit.' });
+    }
+
+    // Calculate total nights
+    const checkin = new Date(newBooking.checkinDate);
+    const checkout = new Date(newBooking.checkoutDate);
+    const oneDay = 1000 * 60 * 60 * 24;
+    const totalNights = Math.max(0, Math.round((checkout.getTime() - checkin.getTime()) / oneDay));
+
+    // Compute total amount
+    const capacity = unitData.maxOccupancy ?? unitData.baseOccupancy ?? 0;
+    const extraGuests = Math.max(0, (newBooking.adults + newBooking.children) - capacity);
+    const extraGuestFee = unitData.extraGuestFee ?? 0;
+    const totalAmount = totalNights * (unitData.rate + extraGuests * extraGuestFee);
+
+    // Temporary object for conflict check
+    const conflictCheck: Booking = {
+      ...newBooking,
+      id: '', // temporary
+      totalAmount,
+      createdAt: new Date().toISOString(),
+      nightlyRate: unitData.rate,
+    };
+
+    // Check for conflicts
+    const conflict = await findBookingConflict(conflictCheck);
     if (conflict)
-      return res.status(409).json({ error: 'Booking conflict detected.', existingBooking: conflict });
+      return res.status(409).json({
+        error: 'Booking conflict detected.',
+        existingBooking: conflict,
+      });
 
-    const docRef = await adminDb.collection('bookings').add(newBooking);
+    // Create booking doc
+    const docRef = adminDb.collection('bookings').doc();
+    const id = docRef.id;
+
+    const bookingWithId: Booking = {
+      ...newBooking,
+      id,
+      totalAmount,
+      nightlyRate: unitData.rate,
+      createdAt: new Date().toISOString(),
+    };
+
+    await docRef.set(bookingWithId);
 
     // Discord notification
     try {
-      const unitDoc = await adminDb.collection('units').doc(newBooking.unitId).get();
-      const unitName = unitDoc.exists ? unitDoc.data()?.name : 'Unknown unit';
       await sendDiscordNotificationFlow({
-        content: `📅 New booking confirmed!\nUnit: ${unitName}\nGuest: ${newBooking.guestFirstName}\nFrom: ${newBooking.checkinDate} To: ${newBooking.checkoutDate}`,
-        username: 'Booking Bot',
+        content: `
+-----------------------------
+🎉 New booking confirmed!
+-----------------------------
+**Booking ID:** ${id}
+**Unit:** ${unitData.name || 'Unknown unit'}
+**Unit ID:** ${newBooking.unitId}
+**Guest:** ${newBooking.guestFirstName} ${newBooking.guestLastName}
+**From:** ${newBooking.checkinDate}
+**To:** ${newBooking.checkoutDate}
+**Total:** ₱${totalAmount.toLocaleString()}
+**Special Requests:** ${newBooking.specialRequests?.trim() || 'N/A'}
+
+\u200B`,
       });
     } catch (e) {
       console.error('Discord notification failed:', e);
@@ -242,31 +304,95 @@ app.post('/booking', async (req, res) => {
 
     // Optional app notification
     if (newBooking.uid) {
-      const unitDoc = await adminDb.collection('units').doc(newBooking.unitId).get();
-      const unitName = unitDoc.data()?.name || 'the unit';
       await adminDb.collection('notifications').add({
         userId: newBooking.uid,
         type: 'booking',
         title: 'Booking Confirmed!',
-        description: `Your booking for ${unitName} from ${newBooking.checkinDate} to ${newBooking.checkoutDate} is confirmed.`,
+        description: `Your booking for ${unitData.name} from ${newBooking.checkinDate} to ${newBooking.checkoutDate} is confirmed.`,
         createdAt: new Date().toISOString(),
         isRead: false,
-        data: { bookingId: docRef.id, unitId: newBooking.unitId },
+        data: { bookingId: id, unitId: newBooking.unitId },
       } as Omit<AppNotification, 'id'>);
     }
 
-    return res.status(201).json({ id: docRef.id });
-  } catch (err: any)_DELETE
+    return res.status(201).json({ id, totalAmount, nightlyRate: unitData.rate }); // Return all calculated fields
+  } catch (err: any) {
     console.error(err);
     return res.status(500).json({ error: 'Failed to create booking' });
   }
 });
 
+
 app.put('/booking/:bookingId', async (req, res) => {
   try {
-    const adminDb = getDb();
+    const { adminDb } = getFirebaseAdmin();
     const bookingData: Partial<Booking> = req.body;
-    await adminDb.collection('bookings').doc(req.params.bookingId).update(bookingData);
+    const ref = adminDb.collection('bookings').doc(req.params.bookingId);
+
+    const beforeSnap = await ref.get();
+    const before = beforeSnap.data() as Booking | undefined;
+
+    // Recalculate totals if relevant fields change
+    let updatedFields = { ...bookingData };
+    if (
+      bookingData.checkinDate ||
+      bookingData.checkoutDate ||
+      bookingData.unitId ||
+      bookingData.adults !== undefined ||
+      bookingData.children !== undefined
+    ) {
+      const targetUnitId = bookingData.unitId || before?.unitId;
+      if (targetUnitId) {
+        const unitSnap = await adminDb.collection('units').doc(targetUnitId).get();
+        const unit = unitSnap.data() as Unit;
+
+        if (unit) {
+            const checkin = new Date(bookingData.checkinDate || before?.checkinDate!);
+            const checkout = new Date(bookingData.checkoutDate || before?.checkoutDate!);
+            const oneDay = 1000 * 60 * 60 * 24;
+            const totalNights = Math.max(0, Math.round((checkout.getTime() - checkin.getTime()) / oneDay));
+
+            const adults = bookingData.adults ?? before?.adults ?? 0;
+            const children = bookingData.children ?? before?.children ?? 0;
+            const capacity = unit.maxOccupancy ?? unit.baseOccupancy ?? 0;
+            const extraGuests = Math.max(0, adults + children - capacity);
+            const totalAmount =
+                totalNights * ((unit.rate ?? 0) + extraGuests * (unit.extraGuestFee ?? 0));
+
+            updatedFields.totalAmount = totalAmount;
+            updatedFields.nightlyRate = unit.rate;
+        }
+      }
+    }
+
+    await ref.update(updatedFields);
+
+    const afterSnap = await ref.get();
+    const after = afterSnap.data() as Booking;
+
+    // Discord notification for update
+    const unitDoc = await adminDb.collection('units').doc(after?.unitId).get();
+    const unitName = unitDoc.exists ? unitDoc.data()?.name : 'Unknown unit';
+
+    const changedFields = Object.keys(bookingData)
+      .filter((key) => before?.[key as keyof Booking] !== after?.[key as keyof Booking])
+      .map(
+        (key) =>
+          `**${key}**: \`${before?.[key as keyof Booking] ?? 'N/A'}\` → \`${after?.[key as keyof Booking]}\``
+      )
+      .join('\n');
+
+    await sendDiscordNotificationFlow({
+      content: `
+-----------------------------
+✏️ Booking **${req.params.bookingId}** was updated:
+-----------------------------
+**Unit:** ${unitName} (${after?.unitId || 'N/A'})
+${changedFields || 'No changes detected.'}
+
+\u200B`,
+    });
+
     return res.status(200).json({ message: 'Booking updated successfully' });
   } catch (err: any) {
     console.error(err);
@@ -276,14 +402,36 @@ app.put('/booking/:bookingId', async (req, res) => {
 
 app.delete('/booking/:bookingId', async (req, res) => {
   try {
-    const adminDb = getDb();
-    await adminDb.collection('bookings').doc(req.params.bookingId).delete();
+    const { adminDb } = getFirebaseAdmin();
+    const docRef = adminDb.collection('bookings').doc(req.params.bookingId);
+    const docSnap = await docRef.get();
+    const booking = docSnap.data() as Booking | undefined;
+
+    await docRef.delete();
+
+    if (booking) {
+      await sendDiscordNotificationFlow({
+        content: `
+-----------------------------
+❌ Booking deleted!
+-----------------------------
+**Booking ID:** ${req.params.bookingId}
+**Guest:** ${booking.guestFirstName || 'N/A'}
+**Unit ID:** ${booking.unitId}
+**From:** ${booking.checkinDate}
+**To:** ${booking.checkoutDate}
+
+\u200B`,
+      });
+    }
+
     return res.status(200).json({ message: 'Booking deleted successfully' });
   } catch (err: any) {
-    console.error(err);
+    console.error('Failed to delete booking:', err);
     return res.status(500).json({ error: 'Failed to delete booking' });
   }
 });
+
 
 // --- Expenses API ---
 app.get('/expenses', async (req, res) => {
@@ -298,7 +446,7 @@ app.get('/expenses', async (req, res) => {
 
 app.post('/expense', async (req, res) => {
   try {
-    const adminDb = getDb();
+    const { adminDb } = getFirebaseAdmin();
     const newExpense: Omit<Expense, 'id'> = req.body;
     const docRef = await adminDb.collection('expenses').add(newExpense);
     return res.status(201).json({ id: docRef.id });
@@ -310,7 +458,7 @@ app.post('/expense', async (req, res) => {
 
 app.put('/expense/:expenseId', async (req, res) => {
   try {
-    const adminDb = getDb();
+    const { adminDb } = getFirebaseAdmin();
     const expenseData: Partial<Expense> = req.body;
     await adminDb.collection('expenses').doc(req.params.expenseId).update(expenseData);
     return res.status(200).json({ message: 'Expense updated successfully' });
@@ -322,7 +470,7 @@ app.put('/expense/:expenseId', async (req, res) => {
 
 app.delete('/expense/:expenseId', async (req, res) => {
   try {
-    const adminDb = getDb();
+    const { adminDb } = getFirebaseAdmin();
     await adminDb.collection('expenses').doc(req.params.expenseId).delete();
     return res.status(200).json({ message: 'Expense deleted successfully' });
   } catch (err: any) {
@@ -332,9 +480,19 @@ app.delete('/expense/:expenseId', async (req, res) => {
 });
 
 // --- Reminders API ---
-app.get('/reminders', async (req, res) => {
+app.get('/reminders/:userId', async (req, res) => {
   try {
-    const reminders = await getCollection<Reminder>('reminders');
+    const { adminDb } = getFirebaseAdmin();
+    const snapshot = await adminDb
+      .collection('reminders')
+      .where('userId', '==', req.params.userId)
+      .get();
+    
+    const reminders: Reminder[] = snapshot.docs.map((doc) => ({
+      id: doc.id,
+      ...(doc.data() as Reminder),
+    }));
+
     return res.status(200).json(reminders);
   } catch (err: any) {
     console.error(err);
@@ -342,9 +500,10 @@ app.get('/reminders', async (req, res) => {
   }
 });
 
+
 app.post('/reminder', async (req, res) => {
   try {
-    const adminDb = getDb();
+    const { adminDb } = getFirebaseAdmin();
     const newReminder: Omit<Reminder, 'id'> = req.body;
     const docRef = await adminDb.collection('reminders').add(newReminder);
     return res.status(201).json({ id: docRef.id });
@@ -356,7 +515,7 @@ app.post('/reminder', async (req, res) => {
 
 app.put('/reminder/:reminderId', async (req, res) => {
   try {
-    const adminDb = getDb();
+    const { adminDb } = getFirebaseAdmin();
     const reminderData: Partial<Reminder> = req.body;
     await adminDb.collection('reminders').doc(req.params.reminderId).update(reminderData);
     return res.status(200).json({ message: 'Reminder updated successfully' });
@@ -368,7 +527,7 @@ app.put('/reminder/:reminderId', async (req, res) => {
 
 app.delete('/reminder/:reminderId', async (req, res) => {
   try {
-    const adminDb = getDb();
+    const { adminDb } = getFirebaseAdmin();
     await adminDb.collection('reminders').doc(req.params.reminderId).delete();
     return res.status(200).json({ message: 'Reminder deleted successfully' });
   } catch (err: any) {
@@ -380,7 +539,7 @@ app.delete('/reminder/:reminderId', async (req, res) => {
 // --- Notifications API ---
 app.get('/notifications/:userId', async (req, res) => {
   try {
-    const adminDb = getDb();
+    const { adminDb } = getFirebaseAdmin();
     const snapshot = await adminDb
       .collection('notifications')
       .where('userId', '==', req.params.userId)
@@ -403,7 +562,7 @@ app.get('/notifications/:userId', async (req, res) => {
 
 app.post('/notification', async (req, res) => {
   try {
-    const adminDb = getDb();
+    const { adminDb } = getFirebaseAdmin();
     const newNotification: Omit<AppNotification, 'id'> = req.body;
     const docRef = await adminDb.collection('notifications').add(newNotification);
     return res.status(201).json({ id: docRef.id });
@@ -415,7 +574,7 @@ app.post('/notification', async (req, res) => {
 
 app.put('/notification/:notificationId/read', async (req, res) => {
   try {
-    const adminDb = getDb();
+    const { adminDb } = getFirebaseAdmin();
     await adminDb.collection('notifications').doc(req.params.notificationId).update({ isRead: true });
     return res.status(200).json({ message: 'Notification marked as read' });
   } catch (err: any) {
@@ -426,7 +585,7 @@ app.put('/notification/:notificationId/read', async (req, res) => {
 
 app.post('/notifications/:userId/mark-all-read', async (req, res) => {
   try {
-    const adminDb = getDb();
+    const { adminDb } = getFirebaseAdmin();
     const snapshot = await adminDb
       .collection('notifications')
       .where('userId', '==', req.params.userId)
@@ -446,7 +605,7 @@ app.post('/notifications/:userId/mark-all-read', async (req, res) => {
 
 app.delete('/notification/:notificationId', async (req, res) => {
   try {
-    const adminDb = getDb();
+    const { adminDb } = getFirebaseAdmin();
     await adminDb.collection('notifications').doc(req.params.notificationId).delete();
     return res.status(200).json({ message: 'Notification deleted successfully' });
   } catch (err: any) {
@@ -458,7 +617,7 @@ app.delete('/notification/:notificationId', async (req, res) => {
 // --- Incidents API ---
 app.get('/incidents/:unitId', async (req, res) => {
   try {
-    const adminDb = getDb();
+    const { adminDb } = getFirebaseAdmin();
     const { unitId } = req.params;
     const { daysAgo } = req.query;
 
@@ -485,7 +644,7 @@ app.get('/incidents/:unitId', async (req, res) => {
 
 app.post('/incident', async (req, res) => {
   try {
-    const adminDb = getDb();
+    const { adminDb } = getFirebaseAdmin();
     const newIncident: Omit<UnitIncident, 'id'> = req.body;
     const docRef = await adminDb.collection('incidents').add(newIncident);
     return res.status(201).json({ id: docRef.id });
@@ -497,7 +656,7 @@ app.post('/incident', async (req, res) => {
 
 app.put('/incident/:incidentId', async (req, res) => {
   try {
-    const adminDb = getDb();
+    const { adminDb } = getFirebaseAdmin();
     const incidentData: Partial<UnitIncident> = req.body;
     await adminDb.collection('incidents').doc(req.params.incidentId).update(incidentData);
     return res.status(200).json({ message: 'Incident updated successfully' });
@@ -509,7 +668,7 @@ app.put('/incident/:incidentId', async (req, res) => {
 
 app.delete('/incident/:incidentId', async (req, res) => {
   try {
-    const adminDb = getDb();
+    const { adminDb } = getFirebaseAdmin();
     await adminDb.collection('incidents').doc(req.params.incidentId).delete();
     return res.status(200).json({ message: 'Incident deleted successfully' });
   } catch (err: any) {
@@ -532,7 +691,7 @@ app.get('/profit-payments', async (req, res) => {
 
 app.post('/profit-payment', async (req, res) => {
     try {
-        const adminDb = getDb();
+        const { adminDb } = getFirebaseAdmin();
         const newPayment: Omit<ProfitPayment, 'id'> = req.body;
         const docRef = await adminDb.collection('profit-payments').add(newPayment);
         return res.status(201).json({ id: docRef.id });
@@ -546,7 +705,7 @@ app.post('/profit-payment', async (req, res) => {
 // --- Receipt Settings API ---
 app.get('/receipt-settings', async (req, res) => {
     try {
-        const adminDb = getDb();
+        const { adminDb } = getFirebaseAdmin();
         const docSnap = await adminDb.collection('config').doc('receiptSettings').get();
         if (!docSnap.exists) {
             // Return default settings if not found
@@ -566,7 +725,7 @@ app.get('/receipt-settings', async (req, res) => {
 
 app.post('/receipt-settings', async (req, res) => {
     try {
-        const adminDb = getDb();
+        const { adminDb } = getFirebaseAdmin();
         const settings: Partial<ReceiptSettings> = req.body;
         await adminDb.collection('config').doc('receiptSettings').set(settings, { merge: true });
         return res.status(200).json({ message: 'Receipt settings updated successfully' });
