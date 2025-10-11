@@ -14,9 +14,6 @@ async function fetchFromApi(path: string, options: RequestInit = {}) {
         const errorData = await response.json().catch(() => ({ error: 'Request failed with status ' + response.status }));
         throw new Error(errorData.error || 'An unknown API error occurred');
     }
-    if (response.status === 204 || response.headers.get('Content-Length') === '0') {
-        return null;
-    }
     return response.json();
 }
 
@@ -44,10 +41,6 @@ export async function updateAgent(agentData: Agent): Promise<void> {
 }
 
 export async function deleteAgent(agentId: string): Promise<void> {
-    const url = `${API_BASE_URL}/agent/${agentId}`;
-    console.log('Deleting agent with ID:', agentId);
-    console.log('Full URL:', url);
-
     await fetchFromApi(`/agent/${agentId}`, {
         method: 'DELETE',
     });
