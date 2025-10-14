@@ -73,13 +73,17 @@ export function QuickActions({
   onOpenChange: (open: boolean) => void;
 }) {
   const router = useRouter();
-  const { setIsAiChatOpen } = useUIContext();
+  const { setIsAiChatOpen, setIsAddBookingOpen } = useUIContext();
 
   const handleNavigate = (href: string, action: string) => {
-    onOpenChange(false);
+    onOpenChange(false); // Close quick actions dialog first
 
     if (action === 'ai-chat') {
       setIsAiChatOpen(true);
+    } else if (href === '/dashboard/bookings' && action === 'add') {
+      // Directly open the booking dialog
+      router.push(href);
+      setTimeout(() => setIsAddBookingOpen(true), 100);
     } else {
       router.push(`${href}?action=${action}`);
     }
