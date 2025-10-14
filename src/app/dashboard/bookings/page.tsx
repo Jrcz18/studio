@@ -14,7 +14,6 @@ import { getUnits } from '@/services/units';
 import { useUIContext } from '@/hooks/use-ui-context';
 import { getAgents } from '@/services/agents';
 import { sendAdminBookingNotification } from '@/ai/flows/send-admin-notification';
-import { sendDiscordNotification } from '@/ai/flows/send-discord-notification';
 import { useToast } from '@/hooks/use-toast';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
@@ -160,11 +159,9 @@ export default function BookingsPage() {
         const unit = units.find(u => u.id === booking.unitId);
         if (!unit) return;
 
-        const discordMessage = `🎉 New Booking!\n**Guest:** ${booking.guestFirstName} ${booking.guestLastName}\n**Unit:** ${unit.name}\n**Dates:** ${booking.checkinDate} to ${booking.checkoutDate}\n**Total:** ₱${booking.totalAmount.toLocaleString()}`;
-        await sendDiscordNotification({ content: discordMessage, username: "Booking Bot" });
         toast({
-            title: 'Booking Created & Notified',
-            description: 'A notification has been sent to your Discord channel.',
+            title: 'Booking Created',
+            description: 'The new booking has been successfully added.',
         });
         
         if (options.sendAdminEmail) {
