@@ -73,20 +73,41 @@ export function QuickActions({
   onOpenChange: (open: boolean) => void;
 }) {
   const router = useRouter();
-  const { setIsAiChatOpen, setIsAddBookingOpen } = useUIContext();
+  const {
+    setIsAiChatOpen,
+    setIsAddBookingOpen,
+    setIsAddUnitOpen,
+    setIsAddReminderOpen,
+    setIsAddExpenseOpen,
+    setIsAddInvestorOpen,
+    setIsAddAgentOpen,
+  } = useUIContext();
 
   const handleNavigate = (href: string, action: string) => {
     onOpenChange(false); // Close quick actions dialog first
 
-    if (action === 'ai-chat') {
-      setIsAiChatOpen(true);
-    } else if (href === '/dashboard/bookings' && action === 'add') {
-      // Directly open the booking dialog
-      router.push(href);
-      setTimeout(() => setIsAddBookingOpen(true), 100);
-    } else {
-      router.push(`${href}?action=${action}`);
-    }
+    // A brief timeout allows the dialog to close before navigating
+    // or opening another, preventing UI state conflicts.
+    setTimeout(() => {
+        if (action === 'ai-chat') {
+            setIsAiChatOpen(true);
+            return;
+        }
+
+        const openDialog = () => {
+            if (href.includes('bookings')) setIsAddBookingOpen(true);
+            else if (href.includes('units')) setIsAddUnitOpen(true);
+            else if (href.includes('reminders')) setIsAddReminderOpen(true);
+            else if (href.includes('expenses')) setIsAddExpenseOpen(true);
+            else if (href.includes('investors')) setIsAddInvestorOpen(true);
+            else if (href.includes('agents')) setIsAddAgentOpen(true);
+        };
+        
+        router.push(href);
+        // Another small delay to allow navigation to complete before opening the dialog
+        setTimeout(openDialog, 50);
+
+    }, 100);
   };
 
   const colorClasses: { [key: string]: string } = {
@@ -110,12 +131,12 @@ export function QuickActions({
             <button
               key={item.label}
               onClick={() => handleNavigate(item.href, item.action)}
-              className={`flex flex-col items-center justify-center p-4 rounded-lg transition-colors aspect-square ${
+              className={`flex flex-col items-center justify-center p-4 rounded-lg transition-colors aspect-square h-24 ${
                 colorClasses[item.label] ?? 'bg-gray-50 hover:bg-gray-100 text-gray-800'
               }`}
             >
               <item.icon className="w-8 h-8 mb-2" />
-              <span className="font-semibold text-center text-xs">{item.label}</span>
+              <span className="font-semibold text-center text-xs whitespace-nowrap">{item.label}</span>
             </button>
           ))}
         </div>
