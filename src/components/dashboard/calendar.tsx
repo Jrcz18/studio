@@ -95,8 +95,8 @@ const Calendar: React.FC<CalendarProps> = ({ bookings, units }) => {
                 
                 <div className="master-grid-container">
                     <div className="master-grid">
-                        <div className="units-column bg-white">
-                            <div className="grid-header bg-primary text-primary-foreground">UNIT</div>
+                        <div className="units-column">
+                            <div className="grid-header">UNIT</div>
                             <div className="unit-list">
                                 {units.map(unit => (
                                     <div 
@@ -104,7 +104,6 @@ const Calendar: React.FC<CalendarProps> = ({ bookings, units }) => {
                                         className="unit-cell"
                                         style={{
                                             borderLeft: `4px solid ${unitColorMap.get(unit.id!)}`,
-                                            backgroundColor: '#c4c4c4'
                                         }}
                                     >
                                         <div className="unit-number text-sm">{unit.name}</div>
@@ -141,7 +140,7 @@ const Calendar: React.FC<CalendarProps> = ({ bookings, units }) => {
                                         const bookingInfo = bookingData[unit.id!]?.[dateKey];
                                         
                                         const cellStyle = bookingInfo
-                                            ? { backgroundColor: unitColorMap.get(unit.id!), color: 'white' }
+                                            ? { backgroundColor: unitColorMap.get(unit.id!), color: 'black' }
                                             : {};
                                         
                                         return (
