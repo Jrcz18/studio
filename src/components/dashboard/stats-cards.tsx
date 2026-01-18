@@ -12,23 +12,36 @@ interface StatsCardsProps {
 
 const StatsCards = ({ bookings, expenses, units }: StatsCardsProps) => {
     const stats = useMemo(() => {
+        const today = new Date();
+        const currentMonth = today.getMonth();
+        const currentYear = today.getFullYear();
+
         const activeBookingsCount = bookings.filter(booking => {
             const checkin = new Date(booking.checkinDate);
             const checkout = new Date(booking.checkoutDate);
-            const today = new Date();
             return checkin <= today && checkout >= today;
         }).length;
 
-        const monthlyRevenue = bookings.reduce((total, booking) => total + (booking.totalAmount || 0), 0);
+        const currentMonthBookings = bookings.filter(booking => {
+            const checkinDate = new Date(booking.checkinDate);
+            return checkinDate.getMonth() === currentMonth && checkinDate.getFullYear() === currentYear;
+        });
+
+        const currentMonthExpenses = expenses.filter(expense => {
+            const expenseDate = new Date(expense.date);
+            return expenseDate.getMonth() === currentMonth && expenseDate.getFullYear() === currentYear;
+        });
+
+        const monthlyRevenue = currentMonthBookings.reduce((total, booking) => total + (booking.totalAmount || 0), 0);
         const totalUnits = units.length;
-        const totalExpenses = expenses.reduce((total, expense) => total + (expense.amount || 0), 0);
+        const totalExpenses = currentMonthExpenses.reduce((total, expense) => total + (expense.amount || 0), 0);
         const netProfit = monthlyRevenue - totalExpenses;
 
         return [
             { label: "Active Bookings", value: activeBookingsCount, icon: StatsBookingIcon, color: "blue" },
-            { label: "Monthly Revenue", value: `₱${monthlyRevenue.toLocaleString()}`, icon: StatsRevenueIcon, color: "green" },
+            { label: "This Month's Revenue", value: `₱${monthlyRevenue.toLocaleString()}`, icon: StatsRevenueIcon, color: "green" },
             { label: "Total Units", value: totalUnits, icon: StatsUnitsIcon, color: "yellow" },
-            { label: "Net Profit", value: `₱${netProfit.toLocaleString()}`, icon: StatsProfitIcon, color: "orange" },
+            { label: "This Month's Profit", value: `₱${netProfit.toLocaleString()}`, icon: StatsProfitIcon, color: "orange" },
         ];
     }, [bookings, expenses, units]);
     
