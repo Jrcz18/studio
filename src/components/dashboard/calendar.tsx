@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useMemo, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import type { Booking, Unit } from '@/lib/types';
 import { ChevronLeft, ChevronRight } from 'lucide-react';
 
@@ -9,142 +9,139 @@ interface CalendarProps {
   units: Unit[];
 }
 
-const unitColors = [
-    '#EF4444', // red-500
-    '#3B82F6', // blue-500
-    '#22C55E', // green-500
-    '#F97316', // orange-500
-    '#8B5CF6', // violet-500
-    '#EC4899', // pink-500
-];
-
-const Calendar = ({ bookings, units }: CalendarProps) => {
-  const [date, setDate] = useState(new Date());
-  const [today, setToday] = useState<Date | null>(null);
+const Calendar: React.FC<CalendarProps> = ({ bookings, units }) => {
+  const [masterDate, setMasterDate] = useState<Date | null>(null);
 
   useEffect(() => {
-    // This effect runs only on the client, after the initial render.
-    // This avoids the hydration mismatch.
-    const now = new Date();
-    now.setHours(0, 0, 0, 0);
-    setToday(now);
+    setMasterDate(new Date());
   }, []);
 
+  const toYYYYMMDD = (date: Date) => {
+    return date.toISOString().split('T')[0];
+  };
 
-  const currentMonth = date.getMonth();
-  const currentYear = date.getFullYear();
+  const bookingData = useMemo(() => {
+    const data: { [unitId: string]: { [dateKey: string]: { status: 'booked'; booking: Booking } } } = {};
+    units.forEach(u => {
+      if (u.id) data[u.id] = {};
+    });
+    bookings.forEach(booking => {
+      if (!booking.unitId || !data[booking.unitId]) return;
+      const startDate = new Date(booking.checkinDate);
+      const endDate = new Date(booking.checkoutDate);
+      for (let d = startDate; d < endDate; d.setDate(d.getDate() + 1)) {
+        const dateKey = toYYYYMMDD(new Date(d));
+        data[booking.unitId][dateKey] = { status: 'booked', booking: booking };
+      }
+    });
+    return data;
+  }, [bookings, units]);
+
+  const showDayDetails = (unitId: string, dateKey: string) => {
+    const data = bookingData[unitId]?.[dateKey];
+    const unitName = units.find(u => u.id === unitId)?.name;
+    if (data) {
+      alert(`Unit: ${unitName}\nGuest: ${data.booking.guestFirstName}\nDates: ${data.booking.checkinDate} to ${data.booking.checkoutDate}`);
+    } else {
+       alert(`Unit: ${unitName}\nDate: ${dateKey}\nStatus: Available`);
+    }
+  };
+
+  const changeMasterMonth = (delta: number) => {
+    setMasterDate(d => d ? new Date(d.getFullYear(), d.getMonth() + delta, 1) : null);
+  };
+
+  if (!masterDate) {
+    return <div className="p-4 text-center">Loading calendar...</div>;
+  }
 
   const monthNames = [
     'January', 'February', 'March', 'April', 'May', 'June',
     'July', 'August', 'September', 'October', 'November', 'December'
   ];
-
-  const firstDay = new Date(currentYear, currentMonth, 1).getDay();
-  const daysInMonth = new Date(currentYear, currentMonth + 1, 0).getDate();
-  
-  const unitColorMap = useMemo(() => {
-    const map = new Map<string, string>();
-    units.forEach((unit, index) => {
-      map.set(unit.id!, unitColors[index % unitColors.length]);
-    });
-    return map;
-  }, [units]);
-
-  const calendarGrid = useMemo(() => {
-    if (!today) {
-        // Render placeholders or a loading state until the client-side `today` is set
-        return Array.from({ length: 35 }).map((_, i) => (
-            <div key={`placeholder-${i}`} className="w-8 h-8"></div>
-        ));
-    }
-
-    const grid = [];
-    for (let i = 0; i < firstDay; i++) {
-      grid.push(<div key={`empty-${i}`} className="p-2"></div>);
-    }
-    for (let day = 1; day <= daysInMonth; day++) {
-      const dateStr = `${currentYear}-${String(currentMonth + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
-      const dayBookings = bookings.filter(booking => {
-        const checkin = new Date(booking.checkinDate);
-        checkin.setHours(0,0,0,0);
-        const checkout = new Date(booking.checkoutDate);
-        checkout.setHours(0,0,0,0);
-        const currentDate = new Date(dateStr);
-        return checkin <= currentDate && checkout > currentDate;
-      });
-
-      const isToday = today ? new Date(dateStr).getTime() === today.getTime() : false;
-      const todayClass = isToday ? 'shadow-[0_0_0_2px_#3B82F6]' : '';
-
-      grid.push(
-        <div key={day} className={`calendar-day relative w-8 h-8 flex items-center justify-center text-sm font-semibold rounded-lg cursor-pointer transition-all duration-200 bg-white border-2 border-gray-200 text-gray-800 ${todayClass}`}>
-          {day}
-          {dayBookings.length > 0 && (
-            <div className="absolute bottom-1 flex space-x-0.5">
-              {dayBookings.map(booking => (
-                <div 
-                  key={booking.id}
-                  className="w-1.5 h-1.5 rounded-full"
-                  style={{ backgroundColor: unitColorMap.get(booking.unitId) || '#A1A1AA' }}
-                />
-              ))}
-            </div>
-          )}
-        </div>
-      );
-    }
-    return grid;
-  }, [currentYear, currentMonth, firstDay, daysInMonth, bookings, today, unitColorMap]);
-
-  const previousMonth = () => {
-    setDate(d => new Date(d.getFullYear(), d.getMonth() - 1, 1));
-  };
-
-  const nextMonth = () => {
-    setDate(d => new Date(d.getFullYear(), d.getMonth() + 1, 1));
-  };
+  const daysInMonth = new Date(masterDate.getFullYear(), masterDate.getMonth() + 1, 0).getDate();
 
   return (
-    <div className="fb-card">
+    <div className="calendar-container prime-card">
       <div className="fb-header">
-        <h4 id="currentMonth" className="text-base font-bold text-black professional-title">
-            {monthNames[currentMonth]} {currentYear}
-        </h4>
-        <div className="flex items-center space-x-1">
-            <button onClick={previousMonth} className="w-8 h-8 flex items-center justify-center rounded-md hover:bg-gray-100 transition-colors">
-                <ChevronLeft className="w-5 h-5 text-gray-600" />
-            </button>
-            <button onClick={nextMonth} className="w-8 h-8 flex items-center justify-center rounded-md hover:bg-gray-100 transition-colors">
-                <ChevronRight className="w-5 h-5 text-gray-600" />
-            </button>
-        </div>
+          <h3 className="font-bold text-gray-900">📋 All Units Overview</h3>
+          <div className="flex items-center space-x-1">
+              <button className="month-nav" onClick={() => changeMasterMonth(-1)}><ChevronLeft size={20} /></button>
+              <div className="month-year">
+                  {`${monthNames[masterDate.getMonth()]} ${masterDate.getFullYear()}`}
+              </div>
+              <button className="month-nav" onClick={() => changeMasterMonth(1)}><ChevronRight size={20} /></button>
+          </div>
       </div>
-        
-      <div className="fb-content">
-          <div className="grid grid-cols-7 gap-1 mb-3">
-            {['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'].map(day => (
-              <div key={day} className="text-center text-xs font-bold text-gray-600 py-1">{day}</div>
-            ))}
+      
+      <div className="master-grid-container">
+          <div className="master-grid">
+              <div className="units-column">
+                  <div className="grid-header">UNIT</div>
+                  <div className="unit-list">
+                      {units.map(unit => (
+                          <div key={unit.id} className="unit-cell">
+                              <div className="unit-number">{unit.name}</div>
+                              <div className="unit-type">{unit.type}</div>
+                          </div>
+                      ))}
+                  </div>
+              </div>
+              
+              <div className="days-column">
+                  <div className="days-header">
+                      {Array.from({ length: daysInMonth }, (_, i) => {
+                          const day = i + 1;
+                          const date = new Date(masterDate.getFullYear(), masterDate.getMonth(), day);
+                          const dayName = ['S', 'M', 'T', 'W', 'T', 'F', 'S'][date.getDay()];
+                          const isWeekend = date.getDay() === 0 || date.getDay() === 6;
+                          const headerBg = isWeekend ? '#e67e22' : 'hsl(var(--primary))';
+
+                          return (
+                              <div key={`header-${day}`} className="day-header-master" style={{ background: headerBg }}>
+                                  <div className="day-header-day-number">{day}</div>
+                                  <div className="day-header-day-name">{dayName}</div>
+                              </div>
+                          );
+                      })}
+                  </div>
+                  <div className="day-rows">
+                      {units.map(unit => (
+                      <div key={unit.id} className="day-row-content">
+                          {Array.from({ length: daysInMonth }, (_, i) => {
+                              const day = i + 1;
+                              const date = new Date(masterDate.getFullYear(), masterDate.getMonth(), day);
+                              const dateKey = toYYYYMMDD(date);
+                              const status = bookingData[unit.id!]?.[dateKey]?.status;
+                              
+                              return (
+                                  <div 
+                                      key={`${unit.id}-${day}`} 
+                                      className={`day-cell-master ${status || ''}`}
+                                      onClick={() => showDayDetails(unit.id!, dateKey)}
+                                  >
+                                      {status === 'booked' ? 'B' : ''}
+                                  </div>
+                              );
+                          })}
+                      </div>
+                  ))}
+                  </div>
+              </div>
           </div>
-          
-          <div id="calendarGrid" className="grid grid-cols-7 gap-1 place-items-center mb-4">
-            {calendarGrid}
-          </div>
-          
-          <div className="flex items-center flex-wrap justify-center gap-x-4 gap-y-2 text-xs pt-3 border-t border-gray-200">
-            {units.map((unit) => (
-                 <div key={unit.id} className="flex items-center space-x-1">
-                    <div 
-                        className="w-3 h-3 rounded-full"
-                        style={{ backgroundColor: unitColorMap.get(unit.id!) || '#A1A1AA' }}
-                    ></div>
-                    <span className="text-gray-600">{unit.name}</span>
-                </div>
-            ))}
-            <div className="flex items-center space-x-1">
-                <div className="w-3 h-3 bg-white border-2 border-gray-300 rounded"></div>
-                <span className="text-gray-600">Available</span>
-            </div>
+      </div>
+
+      <div className="p-4 border-t">
+          <h4 className="mb-3 text-sm font-semibold">Legend</h4>
+          <div className="flex items-center space-x-6 text-xs">
+              <div className="flex items-center">
+                  <div className="w-6 h-6 day-cell-master booked flex items-center justify-center mr-2">B</div>
+                  <span>Booked</span>
+              </div>
+              <div className="flex items-center">
+                  <div className="w-6 h-6 day-cell-master mr-2"></div>
+                  <span>Available</span>
+              </div>
           </div>
       </div>
     </div>
