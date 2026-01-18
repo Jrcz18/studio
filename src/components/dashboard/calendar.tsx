@@ -1,4 +1,3 @@
-
 'use client';
 
 import React, { useState, useEffect, useMemo } from 'react';
@@ -84,7 +83,7 @@ const Calendar: React.FC<CalendarProps> = ({ bookings, units }) => {
         return (
             <div className="calendar-container">
                 <div className="flex justify-between items-center mb-5 px-4 pt-4">
-                    <h3 className="m-0">📋 All Units Overview</h3>
+                    <h3 className="m-0 text-lg font-bold">📋 All Units Overview</h3>
                     <div className="flex gap-2.5 items-center">
                         <button className="month-nav" onClick={() => changeMasterMonth(-1)}><ChevronLeft size={20} /></button>
                         <div className="month-year text-base min-w-[120px] text-center">
@@ -102,9 +101,10 @@ const Calendar: React.FC<CalendarProps> = ({ bookings, units }) => {
                                 {units.map(unit => (
                                     <div 
                                         key={unit.id} 
-                                        className="unit-cell bg-white"
+                                        className="unit-cell"
                                         style={{
-                                            borderLeft: `4px solid ${unitColorMap.get(unit.id!)}`
+                                            borderLeft: `4px solid ${unitColorMap.get(unit.id!)}`,
+                                            backgroundColor: '#f9fafb'
                                         }}
                                     >
                                         <div className="unit-number text-sm">{unit.name}</div>
@@ -162,7 +162,7 @@ const Calendar: React.FC<CalendarProps> = ({ bookings, units }) => {
                     </div>
                 </div>
 
-                 <div className="bg-white rounded-xl shadow p-4 m-4">
+                 <div className="p-4">
                     <h4 className="m-0 mb-3 text-sm">Legend</h4>
                      <div className="flex flex-wrap items-center gap-x-4 gap-y-2">
                         {units.map(unit => (
