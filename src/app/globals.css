@@ -310,23 +310,26 @@
       @apply text-base font-bold text-black min-w-[120px] text-center;
     }
     .master-grid-container {
-      @apply overflow-x-auto;
+      @apply overflow-auto;
+      max-height: 70vh;
     }
     .master-grid {
       @apply flex min-w-max;
     }
     .units-column {
-      @apply flex-shrink-0 sticky left-0 z-10;
+      @apply flex-shrink-0 sticky left-0 z-10 bg-white;
       width: 150px;
     }
     .grid-header {
-      @apply h-12 flex items-center justify-center font-bold text-sm text-gray-600 border-b border-r;
+      @apply h-12 flex items-center justify-center font-bold text-sm border-b border-r sticky top-0 z-30;
+      background-color: hsl(var(--primary));
+      color: hsl(var(--primary-foreground));
     }
     .unit-list {
       @apply border-r;
     }
     .unit-cell {
-      @apply p-2 border-b h-11 flex flex-col justify-center;
+      @apply p-2 border-b h-11 flex flex-col justify-center bg-gray-50;
     }
     .unit-number {
       @apply text-sm font-semibold;
@@ -338,7 +341,7 @@
       @apply flex-grow;
     }
     .days-header {
-      @apply flex;
+      @apply flex sticky top-0 z-20;
     }
     .day-header-master {
       @apply h-12 w-11 flex-shrink-0 flex flex-col items-center justify-center text-white font-bold;
@@ -362,7 +365,6 @@
       @apply bg-gray-100;
     }
     .day-cell-master.booked {
-      background-color: hsl(var(--destructive));
       color: hsl(var(--destructive-foreground));
     }
     .day-cell-master.booked:hover {
