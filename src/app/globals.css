@@ -316,11 +316,11 @@
       @apply flex min-w-max;
     }
     .units-column {
-      @apply flex-shrink-0 sticky left-0 bg-white z-10;
+      @apply flex-shrink-0 sticky left-0 z-10;
       width: 150px;
     }
     .grid-header {
-      @apply h-12 flex items-center justify-center font-bold text-sm text-gray-600 border-b border-r;
+      @apply h-12 flex items-center justify-center font-bold text-sm text-gray-600 border-b border-r bg-white;
     }
     .unit-list {
       @apply border-r;
