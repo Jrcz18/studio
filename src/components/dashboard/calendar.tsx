@@ -140,7 +140,7 @@ const Calendar: React.FC<CalendarProps> = ({ bookings, units }) => {
                                         const bookingInfo = bookingData[unit.id!]?.[dateKey];
                                         
                                         const cellStyle = bookingInfo
-                                            ? { backgroundColor: unitColorMap.get(unit.id!), color: 'black' }
+                                            ? { backgroundColor: unitColorMap.get(unit.id!), color: 'white' }
                                             : {};
                                         
                                         return (
