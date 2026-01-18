@@ -1,3 +1,4 @@
+
 'use client';
 
 import React, { useState, useEffect, useMemo } from 'react';
@@ -95,7 +96,7 @@ const Calendar: React.FC<CalendarProps> = ({ bookings, units }) => {
                 
                 <div className="master-grid-container">
                     <div className="master-grid">
-                        <div className="units-column">
+                        <div className="units-column bg-white">
                             <div className="grid-header">UNIT</div>
                             <div className="unit-list">
                                 {units.map(unit => (
@@ -103,7 +104,7 @@ const Calendar: React.FC<CalendarProps> = ({ bookings, units }) => {
                                         key={unit.id} 
                                         className="unit-cell"
                                         style={{
-                                            borderLeft: `4px solid ${unitColorMap.get(unit.id!)}`,
+                                            borderLeft: `4px solid ${unitColorMap.get(unit.id!)}`
                                         }}
                                     >
                                         <div className="unit-number text-sm">{unit.name}</div>
@@ -140,7 +141,7 @@ const Calendar: React.FC<CalendarProps> = ({ bookings, units }) => {
                                         const bookingInfo = bookingData[unit.id!]?.[dateKey];
                                         
                                         const cellStyle = bookingInfo
-                                            ? { backgroundColor: unitColorMap.get(unit.id!), color: 'white' }
+                                            ? { backgroundColor: unitColorMap.get(unit.id!), color: 'black' }
                                             : {};
                                         
                                         return (
