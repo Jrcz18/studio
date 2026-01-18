@@ -104,7 +104,7 @@ const Calendar: React.FC<CalendarProps> = ({ bookings, units }) => {
                                         className="unit-cell"
                                         style={{
                                             borderLeft: `4px solid ${unitColorMap.get(unit.id!)}`,
-                                            backgroundColor: '#f9fafb'
+                                            backgroundColor: '#c4c4c4'
                                         }}
                                     >
                                         <div className="unit-number text-sm">{unit.name}</div>

@@ -317,13 +317,11 @@
       @apply flex min-w-max;
     }
     .units-column {
-      @apply flex-shrink-0 sticky left-0 z-10 bg-white;
+      @apply flex-shrink-0 sticky left-0 z-20 bg-white;
       width: 150px;
     }
     .grid-header {
       @apply h-12 flex items-center justify-center font-bold text-sm border-b border-r sticky top-0 z-30;
-      background-color: hsl(var(--primary));
-      color: hsl(var(--primary-foreground));
     }
     .unit-list {
       @apply border-r;
@@ -341,7 +339,7 @@
       @apply flex-grow;
     }
     .days-header {
-      @apply flex sticky top-0 z-20;
+      @apply flex sticky top-0 z-10;
     }
     .day-header-master {
       @apply h-12 w-11 flex-shrink-0 flex flex-col items-center justify-center text-white font-bold;
