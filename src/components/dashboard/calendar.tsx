@@ -100,7 +100,14 @@ const Calendar: React.FC<CalendarProps> = ({ bookings, units }) => {
                             <div className="grid-header">UNIT</div>
                             <div className="unit-list">
                                 {units.map(unit => (
-                                    <div key={unit.id} className="unit-cell">
+                                    <div 
+                                        key={unit.id} 
+                                        className="unit-cell"
+                                        style={{
+                                            backgroundColor: 'white',
+                                            borderLeft: `4px solid ${unitColorMap.get(unit.id!)}`
+                                        }}
+                                    >
                                         <div className="unit-number" style={{fontSize: '14px'}}>{unit.name}</div>
                                         <div className="unit-type" style={{fontSize: '10px'}}>{unit.type}</div>
                                     </div>
@@ -161,12 +168,12 @@ const Calendar: React.FC<CalendarProps> = ({ bookings, units }) => {
                      <div style={{ display: 'flex', flexWrap: 'wrap', gap: '16px' }}>
                         {units.map(unit => (
                             <div key={unit.id} style={{ display: 'flex', alignItems: 'center' }}>
-                                <div style={{ width: '12px', height: '12px', backgroundColor: unitColorMap.get(unit.id!), marginRight: '6px' }}></div>
+                                <div style={{ width: '12px', height: '12px', backgroundColor: unitColorMap.get(unit.id!), marginRight: '6px', borderRadius: '2px' }}></div>
                                 <span style={{ fontSize: '12px', fontWeight: 500 }}>{unit.name}</span>
                             </div>
                         ))}
                         <div style={{ display: 'flex', alignItems: 'center' }}>
-                            <div style={{ width: '12px', height: '12px', border: '1px solid #ccc', marginRight: '6px' }}></div>
+                            <div style={{ width: '12px', height: '12px', border: '1px solid #ccc', marginRight: '6px', borderRadius: '2px' }}></div>
                             <span style={{ fontSize: '12px', fontWeight: 500 }}>Available</span>
                         </div>
                     </div>
