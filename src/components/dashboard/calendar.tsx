@@ -1,4 +1,3 @@
-
 'use client';
 
 import React, { useState, useEffect, useMemo } from 'react';
@@ -83,7 +82,7 @@ const Calendar: React.FC<CalendarProps> = ({ bookings, units }) => {
 
         return (
             <div className="calendar-container">
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }} className="px-4 pt-4">
                     <h3 style={{ margin: '0' }}>📋 All Units Overview</h3>
                     <div style={{ display: 'flex', gap: '10px', alignItems: 'center' }}>
                         <button className="month-nav" onClick={() => changeMasterMonth(-1)}><ChevronLeft size={20} /></button>
@@ -97,12 +96,12 @@ const Calendar: React.FC<CalendarProps> = ({ bookings, units }) => {
                 <div className="master-grid-container">
                     <div className="master-grid">
                         <div className="units-column bg-white">
-                            <div className="grid-header">UNIT</div>
+                            <div className="grid-header bg-white">UNIT</div>
                             <div className="unit-list">
                                 {units.map(unit => (
                                     <div 
                                         key={unit.id} 
-                                        className="unit-cell"
+                                        className="unit-cell bg-white"
                                         style={{
                                             borderLeft: `4px solid ${unitColorMap.get(unit.id!)}`
                                         }}
@@ -162,16 +161,16 @@ const Calendar: React.FC<CalendarProps> = ({ bookings, units }) => {
                     </div>
                 </div>
 
-                <div style={{ marginTop: '20px', background: 'white', borderRadius: '12px', padding: '15px', boxShadow: '0 2px 8px rgba(0,0,0,0.1)' }}>
+                <div style={{ background: 'white', borderRadius: '12px', boxShadow: '0 2px 8px rgba(0,0,0,0.1)' }} className="p-4 m-4">
                     <h4 style={{ margin: '0 0 12px 0', fontSize: '14px' }}>Legend</h4>
-                     <div style={{ display: 'flex', flexWrap: 'wrap', gap: '16px' }}>
+                     <div className="flex flex-wrap items-center gap-x-4 gap-y-2">
                         {units.map(unit => (
-                            <div key={unit.id} style={{ display: 'flex', alignItems: 'center' }}>
+                            <div key={unit.id} className="flex items-center">
                                 <div style={{ width: '12px', height: '12px', backgroundColor: unitColorMap.get(unit.id!), marginRight: '6px', borderRadius: '2px' }}></div>
                                 <span style={{ fontSize: '12px', fontWeight: 500 }}>{unit.name}</span>
                             </div>
                         ))}
-                        <div style={{ display: 'flex', alignItems: 'center' }}>
+                        <div className="flex items-center">
                             <div style={{ width: '12px', height: '12px', border: '1px solid #ccc', marginRight: '6px', borderRadius: '2px' }}></div>
                             <span style={{ fontSize: '12px', fontWeight: 500 }}>Available</span>
                         </div>
@@ -182,7 +181,7 @@ const Calendar: React.FC<CalendarProps> = ({ bookings, units }) => {
     }
 
   return (
-    <div className="prime-card p-4">
+    <div className="prime-card">
         {renderMasterCalendar()}
     </div>
   );
