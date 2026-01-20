@@ -7,6 +7,8 @@ import { config } from 'dotenv';
 import { sendDiscordNotificationFlow } from './ai/flows/send-discord-notification';
 import { getFirebaseAdmin } from './lib/firebase-admin';
 import ical from 'ical-generator';
+import { ICalCalendarMethod } from 'ical-generator';
+import { ICalEventStatus, ICalEventTransparency } from 'ical-generator'
 import type {
   Booking,
   Unit,
@@ -713,24 +715,23 @@ app.get('/ical/:unitId', async (req, res) => {
     const calendar = ical({
       name: `${unit.name} Availability`,
       timezone: 'UTC',
-      method: 'PUBLISH', // ✅ string, not enum
+      method: ICalCalendarMethod.PUBLISH, // ✅ string, not enum
     });
 
     bookingsSnap.forEach((doc) => {
       const booking = doc.data() as Booking;
 
-      if (!booking.checkinDate || !booking.checkoutDate) return;
+      if (!booking.checkinDate || !booking.checkoutDate) return;     
+      calendar.createEvent()
+          .id(booking.id || doc.id)
+          .uid(`booking-${booking.bookingId || doc.id}@yourdomain.com`)
+          .start(new Date(booking.checkinDate))
+          .end(new Date(booking.checkoutDate))
+          .summary('Reserved')
+          .description(`Booking ID: ${booking.bookingId || doc.id}`)
+          .status(ICalEventStatus.CONFIRMED)
+          .transparency(ICalEventTransparency.OPAQUE);
 
-      calendar.createEvent({
-        id: booking.id || doc.id,
-        uid: `booking-${booking.bookingId || doc.id}@yourdomain.com`, // stable UID
-        start: new Date(booking.checkinDate),
-        end: new Date(booking.checkoutDate),
-        summary: 'Reserved',
-        description: `Booking ID: ${booking.bookingId || doc.id}`,
-        status: 'CONFIRMED',
-        transparency: 'OPAQUE',
-      });
     });
 
     res.setHeader('Content-Type', 'text/calendar; charset=utf-8');
