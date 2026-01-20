@@ -722,15 +722,18 @@ app.get('/ical/:unitId', async (req, res) => {
       const booking = doc.data() as Booking;
 
       if (!booking.checkinDate || !booking.checkoutDate) return;     
-      calendar.createEvent()
-          .id(booking.id || doc.id)
-          .uid(`booking-${booking.bookingId || doc.id}@yourdomain.com`)
-          .start(new Date(booking.checkinDate))
-          .end(new Date(booking.checkoutDate))
-          .summary('Reserved')
-          .description(`Booking ID: ${booking.bookingId || doc.id}`)
-          .status(ICalEventStatus.CONFIRMED)
-          .transparency(ICalEventTransparency.OPAQUE);
+      calendar.createEvent({
+        start: new Date(), // placeholder, will override below
+        end: new Date(),   // placeholder
+      })  
+      .id(booking.id || doc.id)
+      .uid(`booking-${booking.bookingId || doc.id}@yourdomain.com`)
+      .start(new Date(booking.checkinDate))
+      .end(new Date(booking.checkoutDate))
+      .summary('Reserved')
+      .description(`Booking ID: ${booking.bookingId || doc.id}`)
+      .status(ICalEventStatus.CONFIRMED)
+      .transparency(ICalEventTransparency.OPAQUE);
 
     });
 
