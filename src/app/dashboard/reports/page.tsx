@@ -23,7 +23,7 @@ const months = [
     { value: 0, label: 'January' }, { value: 1, label: 'February' }, { value: 2, label: 'March' },
     { value: 3, label: 'April' }, { value: 4, label: 'May' }, { value: 5, label: 'June' },
     { value: 6, label: 'July' }, { value: 7, label: 'August' }, { value: 8, label: 'September' },
-    { value: 9, 'label': 'October' }, { value: 10, 'label': 'November' }, { value: 11, 'label': 'December' }
+    { value: 9, label: 'October' }, { value: 10, label: 'November' }, { value: 11, label: 'December' }
 ];
 
 export default function ReportsPage() {
@@ -77,32 +77,89 @@ export default function ReportsPage() {
     }, []);
 
     const getMonthlyPerformance = (unitIds: string[], year: number, month: number) => {
-        const relevantBookings = allBookings.filter(b => {
-            const bookingDate = new Date(b.checkinDate);
-            return unitIds.includes(b.unitId) && bookingDate.getFullYear() === year && bookingDate.getMonth() === month;
+        const monthStart = new Date(year, month, 1);
+        const monthEnd = new Date(year, month + 1, 0, 23, 59, 59);
+    
+        // 🔹 PRORATED REVENUE
+        let totalRevenue = 0;
+        const relevantBookings: Booking[] = [];
+    
+        allBookings.forEach(booking => {
+            if (!unitIds.includes(booking.unitId)) return;
+    
+            const checkin = new Date(booking.checkinDate);
+            const checkout = new Date(booking.checkoutDate);
+    
+            const totalNights = Math.ceil(
+                (checkout.getTime() - checkin.getTime()) / (1000 * 60 * 60 * 24)
+            );
+    
+            if (totalNights <= 0 || !booking.totalAmount) return;
+    
+            const pricePerNight = booking.totalAmount / totalNights;
+            let counted = false;
+    
+            // walk through each night
+            for (let d = new Date(checkin); d < checkout; d.setDate(d.getDate() + 1)) {
+                const night = new Date(d);
+    
+                if (night >= monthStart && night <= monthEnd) {
+                    totalRevenue += pricePerNight;
+                    counted = true;
+                }
+            }
+    
+            // only include booking in report if it contributed nights this month
+            if (counted) {
+                relevantBookings.push(booking);
+            }
         });
-
-        const relevantExpenses = allExpenses.filter(e => {
+    
+        // 🔹 FLAT MONTHLY EXPENSES (no prorating, as requested)
+    
+        const specificExpenses = allExpenses.filter(e => {
+            if (!e.unitId) return false;
             const expenseDate = new Date(e.date);
-            // Include general expenses (unitId is null) and expenses for the specific units
-            return (e.unitId && unitIds.includes(e.unitId)) && expenseDate.getFullYear() === year && expenseDate.getMonth() === month;
-        });
-        
-        const totalRevenue = relevantBookings.reduce((acc, booking) => acc + booking.totalAmount, 0);
-
-        // Distribute general expenses proportionally
-        const generalExpenses = allExpenses.filter(e => !e.unitId && new Date(e.date).getFullYear() === year && new Date(e.date).getMonth() === month)
-                                          .reduce((sum, e) => sum + e.amount, 0);
+            return (
+                unitIds.includes(e.unitId) &&
+                expenseDate.getFullYear() === year &&
+                expenseDate.getMonth() === month
+            );
+        }).reduce((sum, e) => sum + e.amount, 0);
+    
+        // General expenses (shared across all units)
+        const generalExpenses = allExpenses.filter(e => {
+            if (e.unitId) return false;
+            const expenseDate = new Date(e.date);
+            return (
+                expenseDate.getFullYear() === year &&
+                expenseDate.getMonth() === month
+            );
+        }).reduce((sum, e) => sum + e.amount, 0);
+    
+        // Distribute general expenses proportionally by unit count
         const proportion = unitIds.length / (units.length || 1);
         const proportionalGeneralExpenses = generalExpenses * proportion;
-        
-        const specificExpenses = relevantExpenses.filter(e => e.unitId).reduce((acc, expense) => acc + expense.amount, 0);
-
+    
         const totalExpenses = specificExpenses + proportionalGeneralExpenses;
         const netProfit = totalRevenue - totalExpenses;
-
-        return { totalRevenue, totalExpenses, netProfit, bookings: relevantBookings, expenses: relevantExpenses };
+    
+        return {
+            totalRevenue,
+            totalExpenses,
+            netProfit,
+            bookings: relevantBookings,
+            expenses: allExpenses.filter(e => {
+                const expenseDate = new Date(e.date);
+                return (
+                    expenseDate.getFullYear() === year &&
+                    expenseDate.getMonth() === month &&
+                    (!e.unitId || unitIds.includes(e.unitId))
+                );
+            }),
+        };
     };
+
 
     const handleGenerateUnitReport = () => {
         setGeneratingUnitReport(true);
@@ -111,14 +168,32 @@ export default function ReportsPage() {
 
         const unitIdsToReport = selectedUnitId === 'all' ? units.map(u => u.id!) : [selectedUnitId];
         const performance = getMonthlyPerformance(unitIdsToReport, year, month);
-
-        const unit = units.find(u => u.id === selectedUnitId);
-        const investor = unit && unit.id ? investors.find(i => i.unitIds && i.unitIds.includes(unit.id!)) : null;
         
+        let unit: Unit | null = null;
+        let investor: Investor | null = null;
         let investorShare = 0;
-        if (investor && performance.netProfit > 0) {
-            investorShare = (performance.netProfit * investor.sharePercentage) / 100;
+        
+        if (selectedUnitId === 'all') {
+            // For "All Units" — sum investor shares across all units
+            const relevantInvestors = investors.filter(i => 
+                i.unitIds && i.unitIds.some(id => units.map(u => u.id!).includes(id))
+            );
+        
+            investorShare = relevantInvestors.reduce((sum, i) => {
+                return sum + (performance.netProfit > 0 ? (performance.netProfit * i.sharePercentage) / 100 : 0);
+            }, 0);
+        
+        } else {
+            // Single unit selected — normal lookup
+            unit = units.find(u => u.id === selectedUnitId) || null;
+            if (unit) {
+                investor = investors.find(i => i.unitIds?.includes(unit.id!)) || null;
+                if (investor && performance.netProfit > 0) {
+                    investorShare = (performance.netProfit * investor.sharePercentage) / 100;
+                }
+            }
         }
+
 
         setGeneratedUnitReport({
             unit: unit || { name: 'All Units' },
@@ -133,7 +208,7 @@ export default function ReportsPage() {
 
     const handleGenerateAgentReport = () => {
         if (!selectedAgentId) return;
-
+    
         setGeneratingAgentReport(true);
         const year = parseInt(selectedAgentYear);
         const month = parseInt(selectedAgentMonth);
@@ -142,58 +217,107 @@ export default function ReportsPage() {
             setGeneratingAgentReport(false);
             return;
         }
-
-        const agentBookings = allBookings.filter(b => {
-            const bookingDate = new Date(b.checkinDate);
-            return b.agentId === selectedAgentId &&
-                   bookingDate.getFullYear() === year &&
-                   bookingDate.getMonth() === month;
+    
+        const monthStart = new Date(year, month, 1);
+        const monthEnd = new Date(year, month + 1, 0, 23, 59, 59);
+    
+        let agentRevenue = 0;
+        const agentBookings: Booking[] = [];
+    
+        // 🔹 PRORATED AGENT REVENUE
+        allBookings.forEach(booking => {
+            if (booking.agentId !== selectedAgentId) return;
+    
+            const checkin = new Date(booking.checkinDate);
+            const checkout = new Date(booking.checkoutDate);
+    
+            const totalNights = Math.ceil(
+                (checkout.getTime() - checkin.getTime()) / (1000 * 60 * 60 * 24)
+            );
+    
+            if (totalNights <= 0 || !booking.totalAmount) return;
+    
+            const pricePerNight = booking.totalAmount / totalNights;
+            let counted = false;
+    
+            // walk through each night and count only this month
+            for (let d = new Date(checkin); d < checkout; d.setDate(d.getDate() + 1)) {
+                const night = new Date(d);
+    
+                if (night >= monthStart && night <= monthEnd) {
+                    agentRevenue += pricePerNight;
+                    counted = true;
+                }
+            }
+    
+            // only include bookings that contributed to this month
+            if (counted) {
+                agentBookings.push(booking);
+            }
         });
-
-        const agentRevenue = agentBookings.reduce((sum, b) => sum + b.totalAmount, 0);
+    
         let totalCommission = 0;
         let reportData: any = {};
-
+    
         if (agent.commissionType === 'fixed_commission') {
+            // 🔹 FIXED COMMISSION — still based on full nights of each booking
             totalCommission = agentBookings.reduce((sum, booking) => {
                 const unit = units.find(u => u.id === booking.unitId);
-                if (unit) {
+                if (unit && booking.nightlyRate !== undefined) {
                     const surplus = booking.nightlyRate - unit.rate;
+            
                     const checkin = new Date(booking.checkinDate);
                     const checkout = new Date(booking.checkoutDate);
-                    const nights = Math.ceil((checkout.getTime() - checkin.getTime()) / (1000 * 3600 * 24));
-                    if (surplus > 0 && nights > 0) {
-                        return sum + (surplus * nights);
+            
+                    let nightsInMonth = 0;
+                    for (let d = new Date(checkin); d < checkout; d.setDate(d.getDate() + 1)) {
+                        const night = new Date(d);
+                        if (night >= monthStart && night <= monthEnd) {
+                            nightsInMonth++;
+                        }
+                    }
+            
+                    if (surplus > 0 && nightsInMonth > 0) {
+                        return sum + (surplus * nightsInMonth);
                     }
                 }
                 return sum;
             }, 0);
 
+    
             reportData = {
                 totalRevenueGenerated: agentRevenue,
                 totalCommission,
             };
-
-        } else { // 'percentage' profit-sharing logic
+    
+        } else { // 🔹 PERCENTAGE PROFIT-SHARING (PRORATED + CONSISTENT)
             const relevantUnitIds = [...new Set(agentBookings.map(b => b.unitId))];
-            
+    
             if (relevantUnitIds.length > 0) {
                 const performance = getMonthlyPerformance(relevantUnitIds, year, month);
-                const agentContributionPercentage = performance.totalRevenue > 0 ? (agentRevenue / performance.totalRevenue) : 0;
+    
+                const agentContributionPercentage =
+                    performance.totalRevenue > 0
+                        ? agentRevenue / performance.totalRevenue
+                        : 0;
+    
                 const agentProfitShare = agentContributionPercentage * performance.netProfit;
                 totalCommission = agentProfitShare * (agent.commissionRate / 100);
-
+    
                 reportData = {
                     totalRevenueGenerated: agentRevenue,
                     totalCommission,
                     unitPerformance: {
                         ...performance,
-                        unitNames: units.filter(u => relevantUnitIds.includes(u.id!)).map(u => u.name).join(', '),
+                        unitNames: units
+                            .filter(u => relevantUnitIds.includes(u.id!))
+                            .map(u => u.name)
+                            .join(', '),
                     },
                     agentContributionPercentage: agentContributionPercentage * 100,
                 };
             } else {
-                 reportData = {
+                reportData = {
                     totalRevenueGenerated: 0,
                     totalCommission: 0,
                     unitPerformance: {},
@@ -201,7 +325,7 @@ export default function ReportsPage() {
                 };
             }
         }
-
+    
         setGeneratedAgentReport({
             agent,
             month: months[month].label,
@@ -209,10 +333,10 @@ export default function ReportsPage() {
             bookings: agentBookings,
             ...reportData
         });
-
-        setGeneratingAgentReport(false);
-    }
     
+        setGeneratingAgentReport(false);
+    };
+
     const handleGenerateInvestorReport = () => {
         if (!selectedInvestorId) return;
 
